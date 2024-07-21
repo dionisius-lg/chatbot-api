@@ -4,6 +4,20 @@ import config from "../config";
 import { readContent } from "./../helpers/file";
 import * as responseHelper from "./../helpers/response";
 
+interface Decoded {
+    user_id: number;
+    user_agent: string;
+    ip_address: string;
+}
+
+// Extend Request interface to include decoded property
+declare global {
+    namespace Express {
+        interface Request {
+            decoded?: Decoded
+        }
+    }
+}
 
 /**
  * Verify client's JWT Token
@@ -25,17 +39,18 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
             const algorithms: Algorithm[] = [config.jwt.algorithm as Algorithm];
             const options: VerifyOptions = { algorithms };
 
-            jwt.verify(token, secret, options, (err: VerifyErrors | null, decoded: string | Jwt | JwtPayload | undefined) => {
+            return jwt.verify(token, secret, options, (err: VerifyErrors | null, decoded: string | Jwt | JwtPayload | undefined) => {
                 if (err) {
                     return responseHelper.sendUnauthorized(res);
                 }
 
-                // Attach decoded information to request object
-                (req as any).decoded = decoded;
-                return next();
-            });
+                if (decoded) {
+                    req.decoded = decoded as Decoded;
+                    return next();
+                }
 
-            return responseHelper.sendUnauthorized(res);
+                return responseHelper.sendUnauthorized(res);
+            });
         }
     }
 

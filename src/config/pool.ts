@@ -26,7 +26,7 @@ pool.getConnection((err: NodeJS.ErrnoException | null, conn: PoolConnection) => 
         return;
     }
 
-    console.log(`[pool] is connected threadID ${conn.threadId}`);
+    console.log(`[pool] is connected. Thread ID: ${conn.threadId}`);
 });
 
 export {

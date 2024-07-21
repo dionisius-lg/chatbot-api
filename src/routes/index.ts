@@ -3,12 +3,14 @@ import { readdirSync } from "fs";
 import path from "path";
 import config from "./../config";
 import * as responseHelper from "./../helpers/response";
-import { authenticateKey } from "./../middleware/auth";
+import { authenticateKey, authenticateToken } from "./../middleware/auth";
 
 const router: Router = express.Router();
 const basename: string = path.basename(__filename);
-const publicPath: string[] = [];
 const { env } = config;
+
+const publicPath: string[] = ['token'];
+const apiKeyPath: string[] = ['webhook'];
 
 const matchInArray = (string: string, expression: RegExp[]): boolean => {
     for (let exp of expression) {
@@ -36,7 +38,10 @@ router.get('/', (req: Request, res: Response) => {
     return res.send({ app: 'Whatsapp Gateway API' });
 });
 
-router.use(unlessPath([...publicPath], authenticateKey));
+// enable auth middleware except for some routes
+router.use(apiKeyPath, authenticateKey);
+router.use(unlessPath([...publicPath, ...apiKeyPath], authenticateToken));
+// router.use(unlessPath([...publicPath], authenticateKey));
 
 readdirSync(__dirname).filter((file: string) => {
     return file.includes('.') && file !== basename && ['.js', '.ts'].includes(path.extname(file));
