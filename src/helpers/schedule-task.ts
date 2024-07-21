@@ -3,7 +3,10 @@ import * as faqAnswersModel from "./../models/faq_answers";
 import * as faqQuestionsModel from "./../models/faq_questions";
 import { NlpManager } from "node-nlp";
 
-const train = async () => {
+/**
+ * Train the network
+ */
+export const trainNetwork = async () => {
     const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
 
     if (faqs.total_data > 0) {
@@ -35,7 +38,3 @@ const train = async () => {
         manager.save();
     }
 }
-
-train();
-
-export default train;
