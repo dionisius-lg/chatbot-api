@@ -3,14 +3,15 @@ import { readdirSync } from "fs";
 import path from "path";
 import config from "./../config";
 import * as responseHelper from "./../helpers/response";
-import { authenticateKey, authenticateToken } from "./../middleware/auth";
+import { authenticateToken, authenticateRefreshToken, authenticateKey } from "./../middleware/auth";
 
 const router: Router = express.Router();
 const basename: string = path.basename(__filename);
 const { env } = config;
 
-const publicPath: string[] = ['token'];
-const apiKeyPath: string[] = ['webhook'];
+const publicPath: string[] = ['/token'];
+const refreshPath = ['/token/refresh']
+const apiKeyPath: string[] = ['/webhook'];
 
 const matchInArray = (string: string, expression: RegExp[]): boolean => {
     for (let exp of expression) {
@@ -40,7 +41,8 @@ router.get('/', (req: Request, res: Response) => {
 
 // enable auth middleware except for some routes
 router.use(apiKeyPath, authenticateKey);
-router.use(unlessPath([...publicPath, ...apiKeyPath], authenticateToken));
+router.use(refreshPath, authenticateRefreshToken);
+router.use(unlessPath([...publicPath, ...refreshPath, ...apiKeyPath], authenticateToken));
 // router.use(unlessPath([...publicPath], authenticateKey));
 
 readdirSync(__dirname).filter((file: string) => {

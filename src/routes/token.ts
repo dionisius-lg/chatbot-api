@@ -7,4 +7,6 @@ const router: Router = express.Router();
 
 router.post('/', validation(schema.auth, 'body'), controller.auth);
 
+router.get('/refresh', controller.refreshAuth);
+
 export default router;

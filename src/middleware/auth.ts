@@ -20,10 +20,10 @@ declare global {
 }
 
 /**
- * Verify client's JWT Token
- * @param  {Object} req - Express request object
- * @param  {Object} res - Express response object
- * @param  {Object} next - Express next method
+ * Verify client's jwt token
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @param {NextFunction} next - Express next method
  */
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
     const { headers } = req;
@@ -58,10 +58,48 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 };
 
 /**
+ * Verify client's jwt refresh token
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @param {NextFunction} next - Express next method
+ */
+export const authenticateRefreshToken = (req: Request, res: Response, next: NextFunction) => {
+    const { headers } = req;
+    const authKey = headers?.authorization || null;
+
+    if (authKey && typeof authKey === 'string') {
+        // extract token from the authorization header
+        const matches = authKey.match(/^Bearer\s+(.*)$/);
+
+        if (matches) {
+            const token: string = matches[1];
+            const secret: Secret = config.jwt.refresh_key;
+            const algorithms: Algorithm[] = [config.jwt.algorithm as Algorithm];
+            const options: VerifyOptions = { algorithms };
+
+            return jwt.verify(token, secret, options, (err: VerifyErrors | null, decoded: string | Jwt | JwtPayload | undefined) => {
+                if (err) {
+                    return responseHelper.sendUnauthorized(res);
+                }
+
+                if (decoded) {
+                    req.decoded = decoded as Decoded;
+                    return next();
+                }
+
+                return responseHelper.sendUnauthorized(res);
+            });
+        }
+    }
+
+    return responseHelper.sendForbidden(res);
+};
+
+/**
  * Verify client's api key
- * @param  {Object} req - Express request object
- * @param  {Object} res - Express response object
- * @param  {Object} next - Express next method
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @param {NextFunction} next - Express next method
  */
 export const authenticateKey = (req: Request, res: Response, next: NextFunction) => {
     const { headers } = req;
