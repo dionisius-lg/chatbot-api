@@ -36,11 +36,13 @@ export const getAll = async (conditions: Conditions) => {
         `languages.name AS language`,
         `languages.code AS language_code`,
         `languages.native_name AS language_native`,
+        `@no := @no + 1 AS no`,
     ];
 
     const join: string[] = [
         `LEFT JOIN faq_categories ON faq_categories.is_active = 1 AND faq_categories.id = ${table}.faq_category_id`,
-        `LEFT JOIN languages ON languages.is_active = 1 AND languages.id = ${table}.language_id`
+        `LEFT JOIN languages ON languages.is_active = 1 AND languages.id = ${table}.language_id`,
+        `CROSS JOIN (SELECT @no := 0) n`,
     ];
 
     const groupBy = [`${table}.id`];

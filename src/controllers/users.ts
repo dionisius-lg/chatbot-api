@@ -2,9 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import * as usersModel from "./../models/users";
 import * as responseHelper from "./../helpers/response";
-import * as valueHelper from "./../helpers/value";
-
-const { isEmpty } = valueHelper;
+import { isEmpty } from "./../helpers/value";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;

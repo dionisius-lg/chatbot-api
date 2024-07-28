@@ -39,7 +39,7 @@ export const writeContent = (filename: string, data: any, subpath?: string): boo
             filedir += `${subpath}/`;
 
             if (!existsSync(filedir)) {
-                mkdirSync(filedir, { mode: 0o777 });
+                mkdirSync(filedir, { mode: 0o777, recursive: true });
             }
         }
 

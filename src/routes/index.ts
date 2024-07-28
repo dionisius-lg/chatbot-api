@@ -2,7 +2,7 @@ import express, { Router, Request, Response, NextFunction } from "express";
 import { readdirSync } from "fs";
 import path from "path";
 import config from "./../config";
-import * as responseHelper from "./../helpers/response";
+import { sendBadRequest, sendInternalServerError, sendNotFound } from "./../helpers/response";
 import { authenticateToken, authenticateRefreshToken, authenticateKey } from "./../middleware/auth";
 
 const router: Router = express.Router();
@@ -36,7 +36,7 @@ const unlessPath = (pathArr: string[] = [], middleware: (req: Request, res: Resp
 };
 
 router.get('/', (req: Request, res: Response) => {
-    return res.send({ app: 'Whatsapp Gateway API' });
+    return res.send({ app: 'Chabot API' });
 });
 
 // enable auth middleware except for some routes
@@ -46,25 +46,29 @@ router.use(unlessPath([...publicPath, ...refreshPath, ...apiKeyPath], authentica
 // router.use(unlessPath([...publicPath], authenticateKey));
 
 readdirSync(__dirname).filter((file: string) => {
-    return file.includes('.') && file !== basename && ['.js', '.ts'].includes(path.extname(file));
+    if (env === 'production') {
+        return file.includes('.') && file !== basename && ['.js'].includes(path.extname(file));
+    }
+
+    return file.includes('.') && file !== basename && ['.ts'].includes(path.extname(file));
 }).forEach((file: string) => {
     let filename = path.parse(file).name;
     router.use(`/${filename}`, require(`./${filename}`).default);
 });
 
 router.use('*', (req: Request, res: Response) => {
-    responseHelper.sendNotFound(res);
+    sendNotFound(res);
 });
 
 if (env === 'production') {
     // override error
     router.use((error: any, req: Request, res: Response, next: NextFunction) => {
         if (error instanceof SyntaxError) {
-            return responseHelper.sendBadRequest(res);
+            return sendBadRequest(res);
         }
 
         console.error(error.stack);
-        responseHelper.sendInternalServerError(res);
+        sendInternalServerError(res);
     });
 }
 

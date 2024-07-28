@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev-win": "set NODE_ENV=development&& nodemon --watch src src/index.ts"
+    "dev-win": "set NODE_ENV=development&& nodemon --watch src src/index.ts",
+    "dev": "pm2 start ecosystem.config.js --env development",
+    "prod-win": "set NODE_ENV=production&& nodemon --watch dist dist/index.js",
+    "prod": "pm2 start ecosystem.config.js --env production",
+    "build": "tsc --build"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +17,7 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "ioredis": "^5.4.1",
     "joi": "^17.13.3",
