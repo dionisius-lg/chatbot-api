@@ -72,3 +72,13 @@ export const maskSensitiveData = (data: Record<string, any>): Record<string, any
 
     return data;
 };
+
+export const excelColumnName = (value: number): string => {
+    let columnName: string = '';
+
+    for (let a = 1, z = 26; (value -= a) >= 0; a = z, z *= 26) {
+        columnName = String.fromCharCode((value % z) / a + 65) + columnName;
+    }
+
+    return columnName;
+};

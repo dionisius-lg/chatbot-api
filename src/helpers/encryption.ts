@@ -2,7 +2,6 @@ import { createCipheriv, createDecipheriv } from "crypto";
 import config from "./../config";
 
 const { secret } = config;
-
 const algorithm = 'aes-256-cbc';
 const key = Buffer.from(secret);
 const iv = 'initVector16Bits';

@@ -2,8 +2,8 @@ import moment, { Moment } from "moment-timezone";
 import * as _ from "lodash";
 import config from "../config";
 import pool, { escape, QueryError, RowDataPacket, ResultSetHeader } from "../config/pool";
-import * as cacheHelper from "./chache";
-import * as requestHelper from "./request";
+import { getDataQuery, setDataQuery, deleteDataQuery } from "./chache";
+import { filterColumn, filterData } from "./request";
 import { isEmpty } from "./value";
 
 const { timezone, database, cache } = config;
@@ -290,7 +290,7 @@ export const getAll = ({
             customFields = _.map(getCustomFields, 'field_key');
             const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
             customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            requestHelper.filterColumn(customAttributes, customFields);
+            filterColumn(customAttributes, customFields);
         }
 
         if (columnSelect && !isEmpty(columnSelect) && _.isArrayLikeObject(columnSelect)) {
@@ -356,7 +356,7 @@ export const getAll = ({
         }
 
         // remove invalid column from conditions
-        requestHelper.filterColumn(conditions, masterColumns);
+        filterColumn(conditions, masterColumns);
 
         if (conditions && !isEmpty(conditions)) {
             Object.keys(conditions).forEach((k) => {
@@ -471,7 +471,7 @@ export const getAll = ({
 
         if (cache.service === 1) {
             const key: string = cacheKey || `${table}:all`;
-            const getCache = await cacheHelper.getDataQuery({ key, field: query });
+            const getCache = await getDataQuery({ key, field: query });
 
             if (getCache) {
                 // get data from cache
@@ -495,7 +495,7 @@ export const getAll = ({
             resultData.page = page;
 
             if (cache.service === 1) {
-                cacheHelper.setDataQuery({ key: `${table}:all`, field: query, value: resultData });
+                setDataQuery({ key: `${table}:all`, field: query, value: resultData });
             }
 
             return resolve(resultData);
@@ -555,7 +555,7 @@ export const getDetail = ({
             customFields = _.map(getCustomFields, 'field_key');
             const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
             customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            requestHelper.filterColumn(customAttributes, customFields);
+            filterColumn(customAttributes, customFields);
         }
 
         if (columnSelect && !isEmpty(columnSelect) && _.isArrayLikeObject(columnSelect)) {
@@ -665,7 +665,7 @@ export const getDetail = ({
             if (cache.service === 1) {
                 const key: string = cacheKey || table;
                 const keyId: string = conditions && conditions?.id || '';
-                const getCache = await cacheHelper.getDataQuery({ key: `${key}${keyId}`, field: query });
+                const getCache = await getDataQuery({ key: `${key}${keyId}`, field: query });
     
                 if (getCache) {
                     // get data from cache
@@ -693,7 +693,7 @@ export const getDetail = ({
             if (typeof table === 'string' && !isEmpty(table) && cache.service === 1) {
                 const key: string = cacheKey || table;
                 const keyId: string = conditions && conditions?.id || '';
-                cacheHelper.setDataQuery({ key: `${key}${keyId}`, field: query, value: resultData });
+                setDataQuery({ key: `${key}${keyId}`, field: query, value: resultData });
             }
 
             return resolve(resultData);
@@ -729,9 +729,9 @@ export const insertData = ({
         const columns: string[] = await checkColumn({ table });
 
         // remove invalid column from data
-        requestHelper.filterColumn(data, columns);
+        filterColumn(data, columns);
         // remove invalid data
-        requestHelper.filterData(data);
+        filterData(data);
 
         let getCustomFields: any[] = [];
         let customFields: string[] = [];
@@ -751,7 +751,7 @@ export const insertData = ({
             customFields = _.map(getCustomFields, 'field_key');
             const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
             customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            requestHelper.filterColumn(dataCustom, customFields);
+            filterColumn(dataCustom, customFields);
         }
 
         let column: string = keys.join(', ');
@@ -823,10 +823,10 @@ export const insertData = ({
                 switch (true) {
                     case (cacheKeys && !isEmpty(cacheKeys)):
                         cacheKeys.push(keyData);
-                        cacheHelper.deleteDataQuery({ key: cacheKeys });
+                        deleteDataQuery({ key: cacheKeys });
                         break;
                     default:
-                        cacheHelper.deleteDataQuery({ key: [keyData] });
+                        deleteDataQuery({ key: [keyData] });
                         break;
                 }
             }
@@ -876,7 +876,7 @@ export const insertManyData = ({
         }
 
         // remove invalid data
-        requestHelper.filterData(data[0]);
+        filterData(data[0]);
 
         const keys: string[] = Object.keys(data[0]);
 
@@ -945,10 +945,10 @@ export const insertManyData = ({
                 switch (true) {
                     case (cacheKeys && !isEmpty(cacheKeys)):
                         cacheKeys.push(keyData);
-                        cacheHelper.deleteDataQuery({ key: cacheKeys });
+                        deleteDataQuery({ key: cacheKeys });
                         break;
                     default:
-                        cacheHelper.deleteDataQuery({ key: [keyData] });
+                        deleteDataQuery({ key: [keyData] });
                         break;
                 }
             }
@@ -998,7 +998,7 @@ export const insertDuplicateUpdateData = ({
         }
 
         // remove invalid data
-        requestHelper.filterData(data[0]);
+        filterData(data[0]);
 
         const keys: string[] = Object.keys(data[0]);
 
@@ -1074,10 +1074,10 @@ export const insertDuplicateUpdateData = ({
                 switch (true) {
                     case (cacheKeys && !isEmpty(cacheKeys)):
                         cacheKeys.push(keyData);
-                        cacheHelper.deleteDataQuery({ key: cacheKeys });
+                        deleteDataQuery({ key: cacheKeys });
                         break;
                     default:
-                        cacheHelper.deleteDataQuery({ key: [keyData] });
+                        deleteDataQuery({ key: [keyData] });
                         break;
                 }
             }
@@ -1126,9 +1126,9 @@ export const updateData = ({
         const columns: string[] = await checkColumn({ table });
 
         // remove invalid column from data
-        requestHelper.filterColumn(data, columns);
+        filterColumn(data, columns);
         // remove invalid data
-        requestHelper.filterData(data);
+        filterData(data);
 
         let customFields: string[] = [];
         let getCustomFields: any[] = [];
@@ -1139,8 +1139,8 @@ export const updateData = ({
             customFields = _.map(getCustomFields, 'field_key');
             const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
             customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            requestHelper.filterColumn(dataCustom, customFields);
-            requestHelper.filterColumn(customAttributes, customFields);
+            filterColumn(dataCustom, customFields);
+            filterColumn(customAttributes, customFields);
         }
 
         // reject('Update query is unsafe without data and condition')
@@ -1262,7 +1262,7 @@ export const updateData = ({
                             cacheKeys.push(`${table}:${keyId}`)
                         }
 
-                        cacheHelper.deleteDataQuery({ key: cacheKeys });
+                        deleteDataQuery({ key: cacheKeys });
                         break;
                     default:
                         let keyToDelete = [keyData];
@@ -1271,7 +1271,7 @@ export const updateData = ({
                             keyToDelete.push(`${table}:${keyId}`)
                         }
 
-                        cacheHelper.deleteDataQuery({ key: keyToDelete });
+                        deleteDataQuery({ key: keyToDelete });
                         break;
                 }
             }
@@ -1350,7 +1350,7 @@ export const deleteData = ({
                             cacheKeys.push(`${table}:${keyId}`)
                         }
 
-                        cacheHelper.deleteDataQuery({ key: cacheKeys });
+                        deleteDataQuery({ key: cacheKeys });
                         break;
                     default:
                         let keyToDelete = [keyData];
@@ -1359,7 +1359,7 @@ export const deleteData = ({
                             keyToDelete.push(`${table}:${keyId}`)
                         }
 
-                        cacheHelper.deleteDataQuery({ key: keyToDelete });
+                        deleteDataQuery({ key: keyToDelete });
                         break;
                 }
             }
