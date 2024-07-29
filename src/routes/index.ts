@@ -9,7 +9,7 @@ const router: Router = express.Router();
 const basename: string = path.basename(__filename);
 const { env } = config;
 
-const publicPath: string[] = ['/token'];
+const publicPath: string[] = ['/token', '/files'];
 const refreshPath = ['/token/refresh']
 const apiKeyPath: string[] = ['/webhook'];
 

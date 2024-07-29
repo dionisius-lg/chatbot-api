@@ -11,30 +11,30 @@ interface CreateExcel {
 interface Message {
     success: boolean;
     filename?: string;
-    path?: string;
-    size?: number;
-    mime?: string;
+    filepath?: string;
+    filesize?: number;
+    mimetype?: string;
     error?: string;
 }
 
 export const createExcel = (data: CreateExcel): Promise<Message> => {
     return new Promise((resolve, reject) => {
-        let filepath: string;
+        let resolvePath: string;
         let workerOptions: WorkerOptions ={
             workerData: data
         };
 
         switch (config.env) {
             case 'production':
-                filepath = path.resolve(__dirname, 'create-excel.js');
+                resolvePath = path.resolve(__dirname, 'create-excel.js');
                 break;
             default:
-                filepath = path.resolve(__dirname, 'create-excel.ts');
-                workerOptions.execArgv = /\.ts$/.test(filepath) ? ["--require", "ts-node/register"] : undefined;
+                resolvePath = path.resolve(__dirname, 'create-excel.ts');
+                workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ["--require", "ts-node/register"] : undefined;
                 break;
         }
 
-        const worker = new Worker(filepath, workerOptions);
+        const worker = new Worker(resolvePath, workerOptions);
 
         worker.on('message', (message) => resolve(message));
 
