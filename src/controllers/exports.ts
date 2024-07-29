@@ -2,9 +2,11 @@ import { Request, Response } from "express";
 import * as faqsModel from "./../models/faqs";
 import * as responseHelper from "./../helpers/response";
 import { createExcel } from "./../helpers/thread";
+import { encrypt } from "./../helpers/encryption";
 
 export const getDataFaqs = async (req: Request, res: Response) => {
-    const { query } = req;
+    const { query, secure } = req;
+    const host = req.get('host');
     const faqs = await faqsModel.getAll(query);
 
     if (faqs.total_data > 0) {
@@ -17,19 +19,22 @@ export const getDataFaqs = async (req: Request, res: Response) => {
 
         const report = await createExcel({ columndata, rowdata: faqs.data, filename: 'report-faqs' });
 
-        if (report.success) {
-            return responseHelper.sendSuccess(res, {
-                total_data: 1,
-                data: {
-                    filename: report.filename,
-                    path: report.path,
-                    size: report.size,
-                    mime: report.mime
-                }
-            });
+        if (!report.success) {
+            return responseHelper.sendBadRequest(res, report.error);
         }
-        
-        return responseHelper.sendBadRequest(res, report.error);
+
+        const data = {
+            filename: report.filename,
+            filepath: report.filepath,
+            filesize: report.filesize,
+            mimetype: report.mimetype
+        };
+
+        const encrypted = encrypt(JSON.stringify(data));
+        const protocol = secure ? 'https' : 'http';
+        const link = `${protocol}://${host}/files/${encrypted}`;
+
+        return responseHelper.sendSuccess(res, { total_data: 1, data: { link }});
     }
 
     return responseHelper.sendNotFoundData(res);

@@ -20,9 +20,9 @@ interface Columns {
 
 interface Result {
     filename: string;
-    path: string;
-    size: number;
-    mime: string;
+    filepath: string;
+    filesize: number;
+    mimetype: string;
 }
 
 const data: WorkerData = workerData;
@@ -41,13 +41,13 @@ const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promi
     // concat with random string and file extension
     filename += `-${randomString(16, true)}.xlsx`;
 
-    let path: string = `${file_dir}/excel`;
+    let filepath: string = `${file_dir}/excel`;
 
-    if (!existsSync(path)) {
-        mkdirSync(path, { mode: 0o777, recursive: true });
+    if (!existsSync(filepath)) {
+        mkdirSync(filepath, { mode: 0o777, recursive: true });
     }
 
-    const stream = createWriteStream(`${path}/${filename}`);
+    const stream = createWriteStream(`${filepath}/${filename}`);
     const workbook = new exceljs.stream.xlsx.WorkbookWriter({ stream, useStyles: true });
     const worksheet = workbook.addWorksheet(filename.split('.')[0]);
     let columns: Columns[] = [];
@@ -107,19 +107,19 @@ const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promi
     await workbook.commit();
     stream.end();
 
-    const filestats = statSync(`${path}/${filename}`);
+    const filestats = statSync(`${filepath}/${filename}`);
 
     return {
         filename,
-        path,
-        size: filestats.size,
-        mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        filepath,
+        filesize: filestats.size,
+        mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     };
 };
 
 createExcel(data)
-    .then(({ filename, path, size, mime }) => {
-        parentPort?.postMessage({ success: true, filename, path, size, mime });
+    .then(({ filename, filepath, filesize, mimetype }) => {
+        parentPort?.postMessage({ success: true, filename, filepath, filesize, mimetype });
     })
     .catch((err) => {
         parentPort?.postMessage({ success: false, error: err.message });
