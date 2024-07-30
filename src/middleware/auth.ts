@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { Secret, Algorithm, VerifyOptions, VerifyErrors, Jwt, JwtPayload } from 'jsonwebtoken';
-import config from "../config";
+import config from "./../config";
 import { readContent } from "./../helpers/file";
 import * as responseHelper from "./../helpers/response";
 

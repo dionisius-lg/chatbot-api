@@ -1,7 +1,7 @@
 import moment from "moment-timezone";
 import ms from "ms";
 import jwt, { Secret, SignOptions, Algorithm } from "jsonwebtoken";
-import config from "../config";
+import config from "./../config";
 
 const { timezone, jwt: { key, expire, refresh_key, refresh_expire, algorithm } } = config;
 

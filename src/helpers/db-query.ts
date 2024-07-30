@@ -1,7 +1,7 @@
 import moment, { Moment } from "moment-timezone";
 import * as _ from "lodash";
-import config from "../config";
-import pool, { escape, QueryError, RowDataPacket, ResultSetHeader } from "../config/pool";
+import config from "./../config";
+import pool, { escape, QueryError, RowDataPacket, ResultSetHeader } from "./../config/pool";
 import { getDataQuery, setDataQuery, deleteDataQuery } from "./chache";
 import { filterColumn, filterData } from "./request";
 import { isEmpty } from "./value";
