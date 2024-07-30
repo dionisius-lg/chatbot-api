@@ -5,7 +5,7 @@ import config from "./../config";
 import * as faqsModel from "./../models/faqs";
 import * as responseHelper from "./../helpers/response";
 import * as logger from "./../helpers/logger";
-import { readContent } from "../helpers/file";
+import { readContent } from "./../helpers/file";
 
 const { timezone } = config;
 

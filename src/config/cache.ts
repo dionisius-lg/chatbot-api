@@ -1,5 +1,5 @@
 import redis, { Redis, RedisOptions } from "ioredis";
-import { isEmpty } from "../helpers/value";
+import { isEmpty } from "./../helpers/value";
 import config from ".";
 
 const { cache: { host, port, password, db, duration, service } } = config;

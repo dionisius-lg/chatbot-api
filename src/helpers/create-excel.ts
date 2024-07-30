@@ -1,7 +1,7 @@
 import { workerData, parentPort } from "worker_threads";
 import exceljs from "exceljs";
 import { existsSync, mkdirSync, createWriteStream, statSync } from "fs";
-import config from "../config";
+import config from "./../config";
 import { isEmpty, randomString, excelColumnName } from "./value";
 
 const { file_dir } = config;

@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import * as usersModel from "./../models/users";
 import * as refreshTokensModel from "./../models/refresh-tokens";
 import * as responseHelper from "./../helpers/response";
-import * as tokenHelper from "../helpers/token";
+import * as tokenHelper from "./../helpers/token";
 
 export const auth = async (req: Request, res: Response) => {
     const { body: { username, password }, headers, socket: { remoteAddress } } = req;

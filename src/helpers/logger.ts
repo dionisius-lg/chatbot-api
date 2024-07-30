@@ -4,7 +4,7 @@ import winston from "winston";
 import "winston-daily-rotate-file";
 import { createStream } from "rotating-file-stream";
 import { resolve } from "path";
-import config from "../config";
+import config from "./../config";
 import { isEmpty, maskSensitiveData } from "./value";
 
 const { timezone } = config;

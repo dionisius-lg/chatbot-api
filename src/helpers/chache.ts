@@ -1,7 +1,7 @@
 import { isJson } from "./value";
 import { createHash } from "crypto";
 import * as _ from "lodash";
-import cache from "../config/cache";
+import cache from "./../config/cache";
 
 interface Data {
     key: string;
