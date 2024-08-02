@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as faqsModel from "./../models/faqs";
-import * as responseHelper from "./../helpers/response";
+import { sendSuccess, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { createExcel } from "./../helpers/thread";
 import { encrypt } from "./../helpers/encryption";
 
@@ -20,7 +20,7 @@ export const getDataFaqs = async (req: Request, res: Response) => {
         const report = await createExcel({ columndata, rowdata: faqs.data, filename: 'report-faqs' });
 
         if (!report.success) {
-            return responseHelper.sendBadRequest(res, report.error);
+            return sendBadRequest(res, report.error);
         }
 
         const data = {
@@ -34,8 +34,8 @@ export const getDataFaqs = async (req: Request, res: Response) => {
         const protocol = secure ? 'https' : 'http';
         const link = `${protocol}://${host}/files/${encrypted}`;
 
-        return responseHelper.sendSuccess(res, { total_data: 1, data: { link }});
+        return sendSuccess(res, { total_data: 1, data: { link }});
     }
 
-    return responseHelper.sendNotFoundData(res);
+    return sendNotFoundData(res);
 };

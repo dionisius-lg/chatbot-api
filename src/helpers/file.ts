@@ -1,3 +1,4 @@
+import { Request } from "express";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { isJson, isEmpty } from "./value";
 
@@ -51,5 +52,15 @@ export const writeContent = (filename: string, data: any, subpath?: string): boo
         return true;
     } catch (err) {
         return false;
+    }
+};
+
+export const mimeFilter = (mimetypes: string[]) => {
+    return (req: Request, file: Express.Multer.File, callback: Function) => {
+        if (mimetypes.includes(`${file.mimetype}`)) {
+            return callback(null, true);
+        }
+
+        callback(new Error('Invalid file type. Only the following types are allowed: ' + mimetypes.join(', ')), false);
     }
 };

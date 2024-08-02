@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { existsSync } from "fs";
-import * as responseHelper from "./../helpers/response";
+import { sendBadRequest } from "./../helpers/response";
 import { decrypt } from "./../helpers/encryption";
 
 export const download = async (req: Request, res: Response) => {
@@ -32,6 +32,6 @@ export const download = async (req: Request, res: Response) => {
             }
         });
     } catch (err: any) {
-        return responseHelper.sendBadRequest(res, err?.message)
+        return sendBadRequest(res, err?.message)
     }
 };
