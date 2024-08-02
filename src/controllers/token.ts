@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import * as usersModel from "./../models/users";
 import * as refreshTokensModel from "./../models/refresh-tokens";
-import * as responseHelper from "./../helpers/response";
+import { sendSuccess, sendBadRequest, sendNotFoundData, sendUnauthorized } from "./../helpers/response";
 import * as tokenHelper from "./../helpers/token";
 
 export const auth = async (req: Request, res: Response) => {
@@ -10,11 +10,11 @@ export const auth = async (req: Request, res: Response) => {
     const { data } = await usersModel.getDetail({ username, is_active: 1 });
 
     if (data === false) {
-        return responseHelper.sendNotFoundData(res, 'User not found. Please input a registered username');
+        return sendNotFoundData(res, 'User not found. Please input a registered username');
     }
 
     if (!bcrypt.compareSync(password, data.password)) {
-        return responseHelper.sendUnauthorized(res, 'Invalid password');
+        return sendUnauthorized(res, 'Invalid password');
     }
 
     const tokenPayload = {
@@ -27,7 +27,7 @@ export const auth = async (req: Request, res: Response) => {
     const createRefreshToken = await tokenHelper.createRefresh(tokenPayload);
 
     if (!createToken.token || !createRefreshToken.token) {
-        return responseHelper.sendBadRequest(res);
+        return sendBadRequest(res);
     }
 
     await refreshTokensModel.insertUpdateData([{
@@ -47,7 +47,7 @@ export const auth = async (req: Request, res: Response) => {
         }
     }
 
-    return responseHelper.sendSuccess(res, result);
+    return sendSuccess(res, result);
 };
 
 export const refreshAuth = async (req: Request, res: Response) => {
@@ -57,7 +57,7 @@ export const refreshAuth = async (req: Request, res: Response) => {
         const { data } = await usersModel.getDetail({ id: decoded.user_id });
 
         if (data === false) {
-            return responseHelper.sendNotFoundData(res, 'User not found');
+            return sendNotFoundData(res, 'User not found');
         }
 
         const tokenPayload = {
@@ -70,7 +70,7 @@ export const refreshAuth = async (req: Request, res: Response) => {
         const createRefreshToken = await tokenHelper.createRefresh(tokenPayload);
 
         if (!createToken.token || !createRefreshToken.token) {
-            return responseHelper.sendBadRequest(res);
+            return sendBadRequest(res);
         }
 
         await refreshTokensModel.insertUpdateData([{
@@ -90,8 +90,8 @@ export const refreshAuth = async (req: Request, res: Response) => {
             }
         }
     
-        return responseHelper.sendSuccess(res, result);
+        return sendSuccess(res, result);
     }
 
-    return responseHelper.sendUnauthorized(res);
+    return sendUnauthorized(res);
 };
