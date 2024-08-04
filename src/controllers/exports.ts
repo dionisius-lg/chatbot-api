@@ -17,17 +17,17 @@ export const getDataFaqs = async (req: Request, res: Response) => {
             language: 'Languange'
         };
 
-        const report = await createExcel({ columndata, rowdata: faqs.data, filename: 'report-faqs' });
+        const excel = await createExcel({ columndata, rowdata: faqs.data, filename: 'report-faqs' });
 
-        if (!report.success) {
-            return sendBadRequest(res, report.error);
+        if (!excel.success) {
+            return sendBadRequest(res, excel.error);
         }
 
         const data = {
-            filename: report.filename,
-            filepath: report.filepath,
-            filesize: report.filesize,
-            mimetype: report.mimetype
+            filename: excel.filename,
+            filepath: excel.filepath,
+            filesize: excel.filesize,
+            mimetype: excel.mimetype
         };
 
         const encrypted = encrypt(JSON.stringify(data));

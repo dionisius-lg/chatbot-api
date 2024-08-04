@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import * as faqsModel from "./../models/faqs";
+import * as faqsCategoriesModel from "./../models/faq_categories";
+import * as languangesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
+import { readExcel } from "./../helpers/thread";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
@@ -55,7 +58,15 @@ export const updateDataById = async (req: Request, res: Response) => {
 export const importData = async (req: Request, res: Response) => {
     const { file } = req;
 
-    console.log(file);
+    if (file) {
+        const excel = await readExcel(file);
+
+        if (!excel.success) {
+            return sendBadRequest(res, excel.error);
+        }
+
+        console.log(excel)
+    }
 
     return sendBadRequest(res);
 };
