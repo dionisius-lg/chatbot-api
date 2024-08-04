@@ -25,8 +25,6 @@ interface Result {
     mimetype: string;
 }
 
-const data: WorkerData = workerData;
-
 const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promise<Result> => {
     if (filename) {
         filename = filename.split('.')[0].trim();
@@ -117,9 +115,9 @@ const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promi
     };
 };
 
-createExcel(data)
-    .then(({ filename, filepath, filesize, mimetype }) => {
-        parentPort?.postMessage({ success: true, filename, filepath, filesize, mimetype });
+createExcel(workerData)
+    .then((result: Result) => {
+        parentPort?.postMessage({ success: true, ...result });
     })
     .catch((err) => {
         parentPort?.postMessage({ success: false, error: err.message });
