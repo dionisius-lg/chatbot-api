@@ -51,7 +51,8 @@ const readExcel = async (file: Express.Multer.File): Promise<Result[]> => {
 
         return result;
     } catch (err: any) {
-        console.log(err)
+        // remove file
+        unlinkSync(file.path);
         return err
     }
 };
@@ -60,6 +61,6 @@ readExcel(workerData)
     .then((result: Result[]) => {
         parentPort?.postMessage({ success: true, data: result });
     })
-    .catch((err) => {
+    .catch((err: any) => {
         parentPort?.postMessage({ success: false, error: err.message });
     });
