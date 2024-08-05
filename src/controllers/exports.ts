@@ -9,7 +9,7 @@ export const getDataFaqs = async (req: Request, res: Response) => {
     const host = req.get('host');
     const faqs = await faqsModel.getAll(query);
 
-    if (faqs.total_data > 0) {
+    if (faqs.total_data > 0 && faqs.data) {
         const columndata = {
             no: 'No',
             intent: 'Intent',

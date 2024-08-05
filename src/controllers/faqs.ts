@@ -4,6 +4,7 @@ import * as faqsCategoriesModel from "./../models/faq_categories";
 import * as languangesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel } from "./../helpers/thread";
+import { filterColumn, filterData } from "./../helpers/request";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
@@ -56,16 +57,62 @@ export const updateDataById = async (req: Request, res: Response) => {
 };
 
 export const importData = async (req: Request, res: Response) => {
-    const { file } = req;
+    const { file, decoded } = req;
+
+    let data: Record<string, any>[] = [];
 
     if (file) {
         const excel = await readExcel(file);
 
-        if (!excel.success) {
+        if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
         }
 
-        console.log(excel)
+        const faqsCategories = await faqsCategoriesModel.getAll({ is_active: 1 });
+        const languages = await languangesModel.getAll({ is_active: 1, limit: 0 });
+
+        if (faqsCategories.total_data === 0 || !faqsCategories.data) {
+            return sendNotFoundData(res, 'FAQ Categories not found');
+        }
+
+        if (languages.total_data === 0 || !languages.data) {
+            return sendBadRequest(res, 'Languanges not found');
+        }
+
+        const allowedKeys = ['intent', 'faq_category', 'language'];
+
+        for (let i in excel.data) {
+            let { faq_category, language, ...row } = excel.data[i];
+
+            filterColumn(row, allowedKeys);
+            filterData(row);
+
+            if (Object.keys(row).length === 0) {
+                continue;
+            }
+
+            let faqCategory = faqsCategories.data.find((obj: Record<string, any>) => obj.name === faq_category);
+            let faqLanguange = languages.data.find((obj: Record<string, any>) => obj.name === language);
+
+            if (!faqCategory || !faqLanguange) {
+                continue;
+            }
+
+            data.push({
+                ...row,
+                faq_category_id: faqCategory.id,
+                language_id: faqLanguange.id,
+                created_by: decoded?.user_id || null
+            });
+        }
+    }
+
+    if (data.length > 0) {
+        const result = await faqsModel.insertManyData(data);
+
+        if (result.total_data > 0) {
+            return sendSuccessCreated(res, result);
+        }
     }
 
     return sendBadRequest(res);

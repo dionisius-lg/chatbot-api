@@ -17,9 +17,16 @@ interface ConditionTypes {
 
 interface ResultData {
     total_data: number;
-    data: false | any;
     limit?: number;
     page?: number;
+}
+
+interface ResultDataArray extends ResultData {
+    data: Record<string, any>[] | false;
+}
+
+interface ResultDataObject extends ResultData {
+    data: Record<string, any> | false;
 }
 
 interface CheckColumnOptions {
@@ -246,9 +253,9 @@ export const getAll = ({
     customOrders,
     having,
     cacheKey
-}: GetAllOptions): Promise<ResultData> => {
+}: GetAllOptions): Promise<ResultDataArray> => {
     return new Promise(async (resolve) => {
-        let resultData: ResultData = {
+        let resultData: ResultDataArray = {
             total_data: 0,
             data: false
         };
@@ -525,9 +532,9 @@ export const getDetail = ({
     attributeColumn,
     join,
     cacheKey
-}: GetDetailOptions): Promise<Record<string, any>> => {
+}: GetDetailOptions): Promise<ResultDataObject> => {
     return new Promise(async (resolve) => {
-        let resultData: ResultData = {
+        let resultData: ResultDataObject = {
             total_data: 0,
             data: false
         };
@@ -715,9 +722,9 @@ export const insertData = ({
     attributeColumn,
     protectedColumns,
     cacheKeys
-}: InsertDataOptions): Promise<Record<string, any>> => {
+}: InsertDataOptions): Promise<ResultDataObject> => {
     return new Promise(async (resolve) => {
-        let resultData: ResultData = {
+        let resultData: ResultDataObject = {
             total_data: 0,
             data: false
         };
@@ -851,9 +858,9 @@ export const insertManyData = ({
     data,
     protectedColumns,
     cacheKeys
-}: InsertManyDataOptions): Promise<Record<string, any>> => {
+}: InsertManyDataOptions): Promise<ResultDataArray> => {
     return new Promise(async (resolve) => {
-        let resultData: ResultData = {
+        let resultData: ResultDataArray = {
             total_data: 0,
             data: false
         };
@@ -973,9 +980,9 @@ export const insertDuplicateUpdateData = ({
     data,
     protectedColumns,
     cacheKeys
-}: InsertDuplicateUpdateDataOptions): Promise<Record<string, any>> => {
+}: InsertDuplicateUpdateDataOptions): Promise<ResultDataArray> => {
     return new Promise(async (resolve) => {
-        let resultData: ResultData = {
+        let resultData: ResultDataArray = {
             total_data: 0,
             data: false
         };
@@ -1106,9 +1113,9 @@ export const updateData = ({
     attributeColumn,
     protectedColumns,
     cacheKeys
-}: UpdateDataOptions): Promise<Record<string, any>> => {
+}: UpdateDataOptions): Promise<ResultDataObject> => {
     return new Promise(async (resolve) => {
-        let resultData: ResultData = {
+        let resultData: ResultDataObject = {
             total_data: 0,
             data: false
         };
@@ -1298,9 +1305,9 @@ export const deleteData = ({
     table,
     conditions,
     cacheKeys
-}: DeleteDataOptions): Promise<Record<string, any>> => {
+}: DeleteDataOptions): Promise<ResultDataObject> => {
     return new Promise(async (resolve) => {
-        let resultData: ResultData = {
+        let resultData: ResultDataObject = {
             total_data: 0,
             data: false
         };

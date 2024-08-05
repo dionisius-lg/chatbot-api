@@ -20,7 +20,7 @@ interface ResultCreateExcel extends Result {
     mimetype?: string;
 }
 interface ResultReadExcel extends Result {
-    result?: string;
+    data?: Record<string, any>[];
 }
 
 export const createExcel = (data: Data): Promise<ResultCreateExcel> => {
