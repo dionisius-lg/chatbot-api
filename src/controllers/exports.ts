@@ -7,7 +7,7 @@ import { encrypt } from "./../helpers/encryption";
 export const getDataFaqs = async (req: Request, res: Response) => {
     const { query, secure } = req;
     const host = req.get('host');
-    const faqs = await faqsModel.getAll(query);
+    const faqs = await faqsModel.getAll({ ...query, is_export: 1 });
 
     if (faqs.total_data > 0 && faqs.data) {
         const columndata = {

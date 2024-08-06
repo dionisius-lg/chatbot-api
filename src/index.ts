@@ -5,7 +5,7 @@ import router from "./routes";
 import { readContent, writeContent } from "./helpers/file";
 import { randomString } from "./helpers/value";
 import * as logger from "./helpers/logger";
-import * as scheduleTask from "./helpers/schedule-task";
+import * as scheduleTask from "./helpers/schedule_task";
 
 const app: Express = express();
 const { env, port } = config;
@@ -14,13 +14,15 @@ const { env, port } = config;
 app.use(express.json());
 // enable parsing application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// enable static files
+app.use('/public', express.static('public', { index: false }));
 // log all access
 logger.access(app);
 // define all route
 app.use(router);
 // disable x-powered-by
 app.disable('x-powered-by');
-
+// init server
 app.listen(port, '0.0.0.0', async (err?: Error) => {
     if (err) {
         console.error(err);

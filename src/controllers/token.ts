@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import * as usersModel from "./../models/users";
-import * as refreshTokensModel from "./../models/refresh-tokens";
+import * as refreshTokensModel from "./../models/refresh_tokens";
 import { sendSuccess, sendBadRequest, sendNotFoundData, sendUnauthorized } from "./../helpers/response";
 import * as tokenHelper from "./../helpers/token";
 
