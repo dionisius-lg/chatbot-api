@@ -1,6 +1,6 @@
 import moment from "moment-timezone";
 import config from "./../config";
-import * as dbQuery from "./../helpers/db-query";
+import * as dbQuery from "./../helpers/db_query";
 import { isEmpty } from "./../helpers/value";
 
 const { timezone } = config;
@@ -18,12 +18,36 @@ interface Data {
 export const getAll = async (conditions: Conditions) => {
     let customConditions: string[] = [];
 
-    if (isEmpty(conditions?.sent) && typeof conditions.sent === 'string' && (conditions.sent).toUpperCase() === 'NULL') {
-        customConditions.push(`${table}.sent IS NULL`);
-        delete conditions.sent;
+    if (!isEmpty(conditions?.start) && typeof conditions.start === 'number') {
+        let start: string = moment(conditions.start * 1000).format('YYYY-MM-DD');
+        let end: string = start;
+
+        if (!isEmpty(conditions?.end) && typeof conditions.end === 'number') {
+            end = moment(conditions.end * 1000).format('YYYY-MM-DD');
+            delete conditions.end;
+        }
+
+        customConditions.push(`DATE(${table}.created) BETWEEN '${start}' AND '${end}'`);
+        delete conditions.start;
     }
 
-    return await dbQuery.getAll({ table, conditions, customConditions });
+    if (!isEmpty(conditions?.name) && typeof conditions.name === 'string') {
+        customConditions.push(`${table}.name LIKE '%${conditions.name}%'`);
+        delete conditions.name;
+    }
+
+    const customColumns: string[] = [];
+
+    const join: string[] = [];
+
+    if (!isEmpty(conditions?.is_export) && parseInt(conditions.is_export) === 1) {
+        customColumns.push(`@no := @no + 1 AS no`);
+        join.push(`CROSS JOIN (SELECT @no := 0) n`);
+    }
+
+    const groupBy = [`${table}.id`];
+
+    return await dbQuery.getAll({ table, conditions, customConditions, customColumns, join, groupBy });
 };
 
 export const getDetail = async (conditions: Conditions) => {

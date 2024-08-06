@@ -32,10 +32,10 @@ export const createExcel = (data: Data): Promise<ResultCreateExcel> => {
 
         switch (config.env) {
             case 'production':
-                resolvePath = path.resolve(__dirname, 'create-excel.js');
+                resolvePath = path.resolve(__dirname, 'create_excel.js');
                 break;
             default:
-                resolvePath = path.resolve(__dirname, 'create-excel.ts');
+                resolvePath = path.resolve(__dirname, 'create_excel.ts');
                 workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ["--require", "ts-node/register"] : undefined;
                 break;
         }
@@ -67,10 +67,10 @@ export const readExcel = (data: Express.Multer.File): Promise<ResultReadExcel> =
 
         switch (config.env) {
             case 'production':
-                resolvePath = path.resolve(__dirname, 'read-excel.js');
+                resolvePath = path.resolve(__dirname, 'read_excel.js');
                 break;
             default:
-                resolvePath = path.resolve(__dirname, 'read-excel.ts');
+                resolvePath = path.resolve(__dirname, 'read_excel.ts');
                 workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ["--require", "ts-node/register"] : undefined;
                 break;
         }

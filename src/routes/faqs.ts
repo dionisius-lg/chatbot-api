@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import * as controller from "./../controllers/faqs";
 import validation from "./../middleware/validation";
-import fileValidation from "./../middleware/file-validation";
+import fileValidation from "./../middleware/file_validation";
 import schema from "./../schemas/faqs";
 
 const router: Router = express.Router();
@@ -17,6 +17,6 @@ router.patch('/:id', validation(schema.detailById, 'params'), validation(schema.
 router.post('/import', fileValidation.single({
     subpath: 'excel',
     mimetypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
-}), controller.importData)
+}), controller.importData);
 
 export default router;

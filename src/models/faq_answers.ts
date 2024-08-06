@@ -1,6 +1,6 @@
 import moment from "moment-timezone";
 import config from "./../config";
-import * as dbQuery from "./../helpers/db-query";
+import * as dbQuery from "./../helpers/db_query";
 import { isEmpty } from "./../helpers/value";
 
 const { timezone } = config;
