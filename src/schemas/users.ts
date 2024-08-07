@@ -8,7 +8,6 @@ const schema = {
         username: Joi.string().min(1).max(20).required(),
         password: Joi.string().min(1).max(20).required(),
         fullname: Joi.string().min(1).max(50),
-        is_active: Joi.number().valid(1, 0),
     }),
     updateData: Joi.object().keys({
         username: Joi.string().min(1).max(20),

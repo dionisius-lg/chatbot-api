@@ -1,14 +1,12 @@
 import { Request, Response } from "express";
-import * as faqsModel from "./../models/faqs";
 import * as faqsCategoriesModel from "./../models/faq_categories";
-import * as languangesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel } from "./../helpers/thread";
 import { filterColumn, filterData } from "./../helpers/request";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
-    const result = await faqsModel.getAll(query);
+    const result = await faqsCategoriesModel.getAll(query);
 
     if (result.total_data > 0) {
         return sendSuccess(res, result);
@@ -19,7 +17,7 @@ export const getData = async (req: Request, res: Response) => {
 
 export const getDataById = async (req: Request, res: Response) => {
     const { params: { id } } = req;
-    const result = await faqsModel.getDetail({ id });
+    const result = await faqsCategoriesModel.getDetail({ id });
 
     if (result.total_data > 0) {
         return sendSuccess(res, result);
@@ -33,7 +31,7 @@ export const createData = async (req: Request, res: Response) => {
 
     body.created_by = decoded?.user_id || null;
 
-    const result = await faqsModel.insertData(body);
+    const result = await faqsCategoriesModel.insertData(body);
 
     if (result.data) {
         return sendSuccessCreated(res, result);
@@ -47,7 +45,7 @@ export const updateDataById = async (req: Request, res: Response) => {
 
     body.update_by = decoded?.user_id || null;
 
-    const result = await faqsModel.updateData(body, { id });
+    const result = await faqsCategoriesModel.updateData(body, { id });
 
     if (result.data) {
         return sendSuccess(res, result);
@@ -68,21 +66,10 @@ export const importData = async (req: Request, res: Response) => {
             return sendBadRequest(res, excel.error);
         }
 
-        const faqsCategories = await faqsCategoriesModel.getAll({ is_active: 1 });
-        const languages = await languangesModel.getAll({ is_active: 1, limit: 0 });
-
-        if (faqsCategories.total_data === 0 || !faqsCategories.data) {
-            return sendNotFoundData(res, 'FAQ Categories not found');
-        }
-
-        if (languages.total_data === 0 || !languages.data) {
-            return sendBadRequest(res, 'Languanges not found');
-        }
-
-        const allowedKeys = ['intent', 'faq_category', 'language_code'];
+        const allowedKeys = ['name'];
 
         for (let i in excel.data) {
-            let { faq_category, language_code, ...row } = excel.data[i];
+            let row = excel.data[i];
 
             filterColumn(row, allowedKeys);
             filterData(row);
@@ -91,24 +78,15 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
-            let faqCategory = faqsCategories.data.find((obj: Record<string, any>) => obj.name.toLowerCase() === faq_category.toLowerCase());
-            let faqLanguage = languages.data.find((obj: Record<string, any>) => obj.code.toLowerCase() === language_code.toLowerCase());
-
-            if (!faqCategory || !faqLanguage) {
-                continue;
-            }
-
             data.push({
                 ...row,
-                faq_category_id: faqCategory.id,
-                language_id: faqLanguage.id,
                 created_by: decoded?.user_id || null
             });
         }
     }
 
     if (data.length > 0) {
-        const result = await faqsModel.insertManyData(data);
+        const result = await faqsCategoriesModel.insertManyData(data);
 
         if (result.total_data > 0) {
             return sendSuccessCreated(res, result);

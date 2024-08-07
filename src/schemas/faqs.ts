@@ -8,7 +8,6 @@ const schema = {
         intent: Joi.string().min(1).max(50).required(),
         faq_category_id: Joi.number().min(1).required(),
         language_id: Joi.number().min(1).required(),
-        is_active: Joi.number().valid(1, 0),
     }),
     updateData: Joi.object().keys({
         intent: Joi.string().min(1).max(50),

@@ -16,6 +16,11 @@ interface Data {
 }
 
 export const getAll = async (conditions: Conditions) => {
+    const conditionTypes = {
+        date: ['created', 'updated'],
+        like: ['name', 'native_name']
+    };
+
     let customConditions: string[] = [];
 
     if (!isEmpty(conditions?.start) && typeof conditions.start === 'number') {
@@ -31,14 +36,9 @@ export const getAll = async (conditions: Conditions) => {
         delete conditions.start;
     }
 
-    if (!isEmpty(conditions?.name) && typeof conditions.name === 'string') {
-        customConditions.push(`${table}.name LIKE '%${conditions.name}%'`);
-        delete conditions.name;
-    }
+    let customColumns: string[] = [];
 
-    const customColumns: string[] = [];
-
-    const join: string[] = [];
+    let join: string[] = [];
 
     if (!isEmpty(conditions?.is_export) && parseInt(conditions.is_export) === 1) {
         customColumns.push(`@no := @no + 1 AS no`);
@@ -47,7 +47,7 @@ export const getAll = async (conditions: Conditions) => {
 
     const groupBy = [`${table}.id`];
 
-    return await dbQuery.getAll({ table, conditions, customConditions, customColumns, join, groupBy });
+    return await dbQuery.getAll({ table, conditions, conditionTypes, customConditions, customColumns, join, groupBy });
 };
 
 export const getDetail = async (conditions: Conditions) => {
