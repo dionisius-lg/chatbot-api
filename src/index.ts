@@ -5,7 +5,7 @@ import router from "./routes";
 import { readContent, writeContent } from "./helpers/file";
 import { randomString } from "./helpers/value";
 import * as logger from "./helpers/logger";
-import * as scheduleTask from "./helpers/schedule_task";
+import { trainNetwork } from "./helpers/thread";
 
 const app: Express = express();
 const { env, port } = config;
@@ -34,7 +34,7 @@ app.listen(port, '0.0.0.0', async (err?: Error) => {
 
     // generate new api key if not exist
     if (!key) {
-        key = randomString(32, true, true);
+        key = randomString(48, true, true);
         writeContent('key.txt', key);
 
         console.log(`[server] is generate new Api Key ${key}`);
@@ -44,14 +44,15 @@ app.listen(port, '0.0.0.0', async (err?: Error) => {
 });
 
 // running schedule task every 5 minutes
-// let isTrainNetwork: boolean = false;
-// cron.schedule('*/1 * * * *', async () => {
-//     if (isTrainNetwork) {
-//         console.log(`[schedule-task] train network is still running...`);
-//         return false;
-//     }
+let isTrainNetwork: boolean = false;
+cron.schedule('*/5 * * * *', async () => {
+    if (isTrainNetwork) {
+        console.log(`[schedule-task] train network is still running...`);
+        return false;
+    }
 
-//     isTrainNetwork = true;
-//     await scheduleTask.trainNetwork();
-//     isTrainNetwork = false;
-// });
+    isTrainNetwork = true;
+    await trainNetwork();
+    // await scheduleTask.trainNetwork();
+    isTrainNetwork = false;
+});

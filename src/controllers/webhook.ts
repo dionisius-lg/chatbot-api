@@ -23,7 +23,7 @@ export const inbound = async (req: Request, res: Response) => {
 
     const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
 
-    if (faqs.total_data > 0) {
+    if (faqs.total_data > 0 && faqs.data) {
         let languages: string[] = faqs.data.map((row: Record<string, any>) => row.language_code);
             languages = [...new Set(languages)];
 
