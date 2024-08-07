@@ -12,7 +12,7 @@ interface WorkerData {
     filename?: string;
 }
 
-interface Columns {
+interface WorksheetColumn {
     header: string;
     key: string;
     width?: number;
@@ -48,14 +48,11 @@ const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promi
     const stream = createWriteStream(`${filepath}/${filename}`);
     const workbook = new exceljs.stream.xlsx.WorkbookWriter({ stream, useStyles: true });
     const worksheet = workbook.addWorksheet(filename.split('.')[0]);
-    let columns: Columns[] = [];
+    let columns: WorksheetColumn[] = [];
 
     Object.keys(columndata).forEach((key) => {
-        columns.push({ header: columndata[key], key });
-    });
-
-    columns.forEach((column) => {
-        column.width = column.header.length > 20 ? column.header.length : 20;
+        let width: number = columndata[key].length > 20 ? columndata[key].length : 20;
+        columns.push({ header: columndata[key], key, width });
     });
 
     worksheet.columns = columns;
@@ -81,14 +78,14 @@ const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promi
         };
     });
 
-    let rowNumber: number = 2;
+    let rownumber: number = 2;
 
-    for (let i in rowdata) {
-        if (!isEmpty(rowdata[i]) && (typeof rowdata[i] === 'object' && Object.keys(rowdata[i]).length > 0)) {
-            worksheet.addRow(rowdata[i]);
+    rowdata.forEach((row, i) => {
+        if (!isEmpty(row) && (typeof row === 'object' && Object.keys(row).length > 0)) {
+            worksheet.addRow(row);
 
             columns.forEach((_, i) => {
-                let cell = excelColumnName(i + 1) + rowNumber;
+                let cell = excelColumnName(i + 1) + rownumber;
 
                 worksheet.getCell(cell).border = {
                     top: { style: 'thin' },
@@ -98,9 +95,9 @@ const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promi
                 };
             });
 
-            rowNumber++;
+            rownumber++;
         }
-    };
+    });
 
     await workbook.commit();
     stream.end();

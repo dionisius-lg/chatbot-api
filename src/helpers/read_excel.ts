@@ -8,36 +8,40 @@ interface Result {
 
 const readExcel = async (file: Express.Multer.File): Promise<Result[]> => {
     try {
-        const stream = createReadStream(file.path);
-        const workbook = new exceljs.stream.xlsx.WorkbookReader(stream, {});
-
-        let headers: string[] = [];
         let result: Result[] = [];
+        let headers: string[] = [];
 
-        for await (const worksheetReader of workbook) {
-            let firstRowProcessed = false;
+        const stream = createReadStream(file.path);
+        const workbook = new exceljs.stream.xlsx.WorkbookReader(stream, {
+            sharedStrings: 'cache',
+            hyperlinks: 'ignore',
+            worksheets: 'emit',
+            entries: 'ignore',
+            styles: 'ignore'
+        });
 
-            for await (const row of worksheetReader) {
-                if (row && row.values && row.values instanceof Array) {
-                    if (!firstRowProcessed) {
-                        row.values.slice(1).forEach((cell) => {
-                            if (cell) {
-                                let value = `${cell}`.toLowerCase().replace(/[^0-9a-z ]/gi, '').replace( /\s\s+/g, ' ').replace(/ /g,"_");
+        for await (const worksheet of workbook) {
+            for await (const row of worksheet) {
+                const { model } = row;
+
+                if (model?.cells instanceof Array && model.cells.length > 0) {
+                    switch (model.number) {
+                        case 1:
+                            model.cells.forEach((cell, i) => {
+                                let value = `${cell.value}`.toLowerCase().replace(/[^0-9a-z ]/gi, '').replace( /\s\s+/g, ' ').replace(/ /g,"_");
                                 headers.push(value);
-                            }
-                        });
-
-                        firstRowProcessed = true;
-                    } else {
-                        let rowData: Record<string, any> = {};
-
-                        row.values.slice(1).forEach((cell, i) => {
-                            if (headers[i]) {
-                                rowData[headers[i]] = cell;
-                            }
-                        });
-
-                        result.push(rowData);
+                            });
+                            break;
+                        default:
+                            let rowData: Record<string, any> = {};
+                            model.cells.forEach((cell, i) => {
+                                if (headers[i]) {
+                                    let value = `${cell.value}`.toLowerCase().replace(/[^0-9a-z ]/gi, '').replace( /\s\s+/g, ' ').replace(/ /g,"_");
+                                    rowData[headers[i]] = value;
+                                }
+                            });
+                            result.push(rowData);
+                            break;
                     }
                 }
             }
@@ -48,12 +52,11 @@ const readExcel = async (file: Express.Multer.File): Promise<Result[]> => {
 
         // remove file
         unlinkSync(file.path);
+        stream.close();
 
         return result;
     } catch (err: any) {
-        // remove file
-        unlinkSync(file.path);
-        return err
+        throw err;
     }
 };
 

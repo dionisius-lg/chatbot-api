@@ -16,6 +16,11 @@ interface Data {
 }
 
 export const getAll = async (conditions: Conditions) => {
+    const conditionTypes = {
+        date: ['created', 'updated'],
+        like: ['intent']
+    };
+
     let customConditions: string[] = [];
 
     if (!isEmpty(conditions?.start) && typeof conditions.start === 'number') {
@@ -31,21 +36,20 @@ export const getAll = async (conditions: Conditions) => {
         delete conditions.start;
     }
 
-    if (!isEmpty(conditions?.name) && typeof conditions.name === 'string') {
-        customConditions.push(`${table}.name LIKE '%${conditions.name}%'`);
-        delete conditions.name;
-    }
-
-    const customColumns: string[] = [
+    let customColumns: string[] = [
         `faq_categories.name AS faq_category`,
         `languages.name AS language`,
         `languages.code AS language_code`,
         `languages.native_name AS language_native`,
+        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
+        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
     ];
 
-    const join: string[] = [
+    let join: string[] = [
         `LEFT JOIN faq_categories ON faq_categories.is_active = 1 AND faq_categories.id = ${table}.faq_category_id`,
         `LEFT JOIN languages ON languages.is_active = 1 AND languages.id = ${table}.language_id`,
+        `LEFT JOIN users AS created_users ON created_users.is_active = 1 AND created_users.id = ${table}.created_by`,
+        `LEFT JOIN users AS updated_users ON updated_users.is_active = 1 AND updated_users.id = ${table}.updated_by`,
     ];
 
     if (!isEmpty(conditions?.is_export) && parseInt(conditions.is_export) === 1) {
@@ -55,11 +59,27 @@ export const getAll = async (conditions: Conditions) => {
 
     const groupBy = [`${table}.id`];
 
-    return await dbQuery.getAll({ table, conditions, customConditions, customColumns, join, groupBy });
+    return await dbQuery.getAll({ table, conditions, conditionTypes, customConditions, customColumns, join, groupBy });
 };
 
 export const getDetail = async (conditions: Conditions) => {
-    return await dbQuery.getDetail({ table, conditions });
+    const customColumns: string[] = [
+        `faq_categories.name AS faq_category`,
+        `languages.name AS language`,
+        `languages.code AS language_code`,
+        `languages.native_name AS language_native`,
+        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
+        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
+    ];
+
+    const join: string[] = [
+        `LEFT JOIN faq_categories ON faq_categories.is_active = 1 AND faq_categories.id = ${table}.faq_category_id`,
+        `LEFT JOIN languages ON languages.is_active = 1 AND languages.id = ${table}.language_id`,
+        `LEFT JOIN users AS created_users ON created_users.is_active = 1 AND created_users.id = ${table}.created_by`,
+        `LEFT JOIN users AS updated_users ON updated_users.is_active = 1 AND updated_users.id = ${table}.updated_by`,
+    ];
+
+    return await dbQuery.getDetail({ table, conditions, customColumns, join });
 };
 
 export const insertData = async (data: Data) => {

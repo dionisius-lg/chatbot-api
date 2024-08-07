@@ -281,7 +281,7 @@ export const getAll = ({
 
         let limit: number = 20;
 
-        if (conditions && typeof conditions?.limit === 'number') {
+        if (conditions && !_.isNaN(conditions?.limit) && /^\d+$/.test(conditions?.limit)) {
             limit = conditions.limit;
         }
 
