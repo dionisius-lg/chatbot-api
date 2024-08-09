@@ -3,9 +3,7 @@ import moment from "moment-timezone";
 import { NlpManager, Language } from "node-nlp";
 import config from "./../config";
 import * as faqsModel from "./../models/faqs";
-import * as responseHelper from "./../helpers/response";
-import * as logger from "./../helpers/logger";
-import { readContent } from "./../helpers/file";
+import { sendSuccess, sendBadRequest } from "./../helpers/response";
 
 const { timezone } = config;
 
@@ -21,26 +19,30 @@ interface Langs {
 export const inbound = async (req: Request, res: Response) => {
     const { body } = req;
 
-    const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
+    try {
+        const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
 
-    if (faqs.total_data > 0) {
-        let languages: string[] = faqs.data.map((row: Record<string, any>) => row.language_code);
-            languages = [...new Set(languages)];
+        if (faqs.total_data > 0 && faqs.data) {
+            let languages: string[] = faqs.data.map((row: Record<string, any>) => row.language_code);
+                languages = [...new Set(languages)];
 
-        const manager = new NlpManager({ languages });
-              manager.load('model.nlp');
+            let manager = new NlpManager({ languages });
+                manager.load('model.nlp');
 
-        const langs: Langs[] = new Language().guess(body.text);
-        let lang: string = 'en';
+            const langs: Langs[] = new Language().guess(body.text);
+            let lang: string = 'en';
 
-        if (langs.length > 0) {
-            lang = langs[0].alpha2;
+            if (langs.length > 0) {
+                lang = langs[0].alpha2;
+            }
+
+            const process = await manager.process(lang, body.text);
+
+            return sendSuccess(res, { answer: process.answer });
         }
 
-        const process = await manager.process('en', body.text);
-
-        return responseHelper.sendSuccess(res, { answer: process.answer });
+        return sendSuccess(res, { answer: 'null' });
+    } catch (err: any) {
+        return sendBadRequest(res);
     }
-
-    return res.json('not found')
-}
+};

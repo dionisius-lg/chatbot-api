@@ -2,10 +2,8 @@ import express, { Express } from "express";
 import cron from "node-cron";
 import config from "./config";
 import router from "./routes";
-import { readContent, writeContent } from "./helpers/file";
-import { randomString } from "./helpers/value";
 import * as logger from "./helpers/logger";
-import * as scheduleTask from "./helpers/schedule_task";
+import { trainNetwork } from "./helpers/thread";
 
 const app: Express = express();
 const { env, port } = config;
@@ -22,36 +20,25 @@ logger.access(app);
 app.use(router);
 // disable x-powered-by
 app.disable('x-powered-by');
-// init server
+
 app.listen(port, '0.0.0.0', async (err?: Error) => {
     if (err) {
         console.error(err);
         return;
     }
 
-    // check api key
-    let key = readContent('key.txt');
-
-    // generate new api key if not exist
-    if (!key) {
-        key = randomString(32, true, true);
-        writeContent('key.txt', key);
-
-        console.log(`[server] is generate new Api Key ${key}`);
-    }
-
     console.log(`[server] is running for ${env} environtment | port ${port}`);
 });
 
-// running schedule task every 5 minutes
-// let isTrainNetwork: boolean = false;
-// cron.schedule('*/1 * * * *', async () => {
-//     if (isTrainNetwork) {
-//         console.log(`[schedule-task] train network is still running...`);
-//         return false;
-//     }
+// running schedule task every 00:00
+let isTrainNetwork: boolean = false;
+cron.schedule('0 0 * * *', async () => {
+    if (isTrainNetwork) {
+        console.log(`[schedule-task] train network is still running...`);
+        return false;
+    }
 
-//     isTrainNetwork = true;
-//     await scheduleTask.trainNetwork();
-//     isTrainNetwork = false;
-// });
+    isTrainNetwork = true;
+    await trainNetwork();
+    isTrainNetwork = false;
+});
