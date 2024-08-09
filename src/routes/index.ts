@@ -43,7 +43,6 @@ router.get('/', (req: Request, res: Response) => {
 router.use(apiKeyPath, authenticateKey);
 router.use(refreshPath, authenticateRefreshToken);
 router.use(unlessPath([...publicPath, ...refreshPath, ...apiKeyPath], authenticateToken));
-// router.use(unlessPath([...publicPath], authenticateKey));
 
 readdirSync(__dirname).filter((file: string) => {
     if (env === 'production') {

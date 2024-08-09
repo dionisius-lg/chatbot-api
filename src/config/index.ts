@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import { getContent, putContent } from "./../helpers/file";
+import { randomString, isEmpty } from "../helpers/value";
 
 dotenv.config({ path: './.env' });
 
@@ -37,6 +39,21 @@ interface Config {
     cache: CacheConfig;
     file_dir: string;
     secret: string;
+    app_key: string;
+}
+
+const appKey = (): string => {
+    // check api key
+    let key = getContent('key.txt');
+
+    // generate new api key if not exist
+    if (isEmpty(key)) {
+        key = randomString(48, true, true);
+        putContent('key.txt', key);
+        console.log(`[server] is generate new Api Key ${key}`);
+    }
+
+    return key;
 }
 
 const config: Config = {
@@ -69,6 +86,7 @@ const config: Config = {
     },
     file_dir: process.env.FILE_DIR || './',
     secret: process.env.SECRET || 'secret',
+    app_key: appKey(),
 }
 
 export default config;

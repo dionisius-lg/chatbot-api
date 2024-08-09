@@ -1,14 +1,13 @@
 import { Request, Response } from "express";
 import * as faqsModel from "./../models/faqs";
-import * as faqCategoriesModel from "./../models/faq_categories";
-import * as languangesModel from "./../models/languages";
+import * as faqQuestionsModel from "./../models/faq_questions";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel } from "./../helpers/thread";
 import { filterColumn, filterData } from "./../helpers/request";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
-    const result = await faqsModel.getAll(query);
+    const result = await faqQuestionsModel.getAll(query);
 
     if (result.total_data > 0) {
         return sendSuccess(res, result);
@@ -19,7 +18,7 @@ export const getData = async (req: Request, res: Response) => {
 
 export const getDataById = async (req: Request, res: Response) => {
     const { params: { id } } = req;
-    const result = await faqsModel.getDetail({ id });
+    const result = await faqQuestionsModel.getDetail({ id });
 
     if (result.total_data > 0) {
         return sendSuccess(res, result);
@@ -33,7 +32,7 @@ export const createData = async (req: Request, res: Response) => {
 
     body.created_by = decoded?.user_id || null;
 
-    const result = await faqsModel.insertData(body);
+    const result = await faqQuestionsModel.insertData(body);
 
     if (result.data) {
         return sendSuccessCreated(res, result);
@@ -47,7 +46,7 @@ export const updateDataById = async (req: Request, res: Response) => {
 
     body.update_by = decoded?.user_id || null;
 
-    const result = await faqsModel.updateData(body, { id });
+    const result = await faqQuestionsModel.updateData(body, { id });
 
     if (result.data) {
         return sendSuccess(res, result);
@@ -63,25 +62,20 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['intent', 'faq_category', 'language_code'];
+        const allowedKeys = ['question', 'intent'];
 
         if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
         }
 
-        const faqCategories = await faqCategoriesModel.getAll({ is_active: 1, limit: 0 });
-        const languages = await languangesModel.getAll({ is_active: 1, limit: 0 });
+        const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
 
-        if (faqCategories.total_data === 0 || !faqCategories.data) {
-            return sendNotFoundData(res, 'FAQ Categories not found');
-        }
-
-        if (languages.total_data === 0 || !languages.data) {
-            return sendBadRequest(res, 'Languanges not found');
+        if (faqs.total_data === 0 || !faqs.data) {
+            return sendNotFoundData(res, 'FAQ not found');
         }
 
         for (let i in excel.data) {
-            let { faq_category, language_code, ...row } = excel.data[i];
+            let { intent, ...row } = excel.data[i];
 
             filterColumn(row, allowedKeys);
             filterData(row);
@@ -90,24 +84,22 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
-            let faqCategory = faqCategories.data.find((obj: Record<string, any>) => obj.name.toLowerCase() === faq_category.toLowerCase());
-            let faqLanguage = languages.data.find((obj: Record<string, any>) => obj.code.toLowerCase() === language_code.toLowerCase());
+            let faq = faqs.data.find((obj: Record<string, any>) => obj.intent.toLowerCase() === intent.toLowerCase());
 
-            if (!faqCategory || !faqLanguage) {
+            if (!faq) {
                 continue;
             }
 
             data.push({
                 ...row,
-                faq_category_id: faqCategory.id,
-                language_id: faqLanguage.id,
+                faq_id: faq.id,
                 created_by: decoded?.user_id || null
             });
         }
     }
 
     if (data.length > 0) {
-        const result = await faqsModel.insertManyData(data);
+        const result = await faqQuestionsModel.insertManyData(data);
 
         if (result.total_data > 0) {
             return sendSuccessCreated(res, result);

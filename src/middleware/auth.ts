@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { Secret, Algorithm, VerifyOptions, VerifyErrors, Jwt, JwtPayload } from 'jsonwebtoken';
 import config from "./../config";
-import { readContent } from "./../helpers/file";
+import { getContent } from "./../helpers/file";
 import * as responseHelper from "./../helpers/response";
 
 interface Decoded {
@@ -106,7 +106,7 @@ export const authenticateKey = (req: Request, res: Response, next: NextFunction)
     const authKey = headers?.['x-api-key'] || null;
 
     if (authKey) {
-        const key = readContent('key.txt');
+        const key = getContent('key.txt');
 
         if (key !== authKey) {
             return responseHelper.sendUnauthorized(res, 'API key not valid');
