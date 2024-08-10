@@ -1,7 +1,9 @@
 import express, { Express } from "express";
+import swagger from "swagger-ui-express";
 import cron from "node-cron";
 import config from "./config";
 import router from "./routes";
+import setupSwagger from "./middleware/setup_swagger";
 import * as logger from "./helpers/logger";
 import { trainNetwork } from "./helpers/thread";
 
@@ -16,6 +18,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/public', express.static('public', { index: false }));
 // log all access
 logger.access(app);
+// setup swagger
+app.use('/docs', swagger.serve, setupSwagger);
 // define all route
 app.use(router);
 // disable x-powered-by

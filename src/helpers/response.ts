@@ -12,7 +12,7 @@ interface Result {
 }
 
 /**
- * Success 200 OK
+ * 200 Success OK
  * @param {Response} res
  * @param {Result} result
  * @returns {Object} JSON object
@@ -45,7 +45,7 @@ export const sendSuccess = (res: Response, result: Result | Result[] | null): ob
 };
 
 /**
- * Success 201 Created
+ * 201 Success Created
  * @param {Response} res
  * @param {Result} result
  * @returns {Object} JSON object
@@ -55,7 +55,7 @@ export const sendSuccessCreated = (res: Response, result: Result | Result[] | nu
 };
 
 /**
- * Error 400 Bad Request
+ * 400 Bad Request
  * @param {Response} res
  * @param {string} message
  * @returns {Object} JSON object
@@ -66,7 +66,7 @@ export const sendBadRequest = (res: Response, message?: string): object => {
 };
 
 /**
- * Error 401 Unauthorized
+ * 401 Unauthorized
  * @param {Response} res
  * @param {string} message
  * @returns {Object} JSON object
@@ -77,7 +77,7 @@ export const sendUnauthorized = (res: Response, message?: string): object => {
 };
 
 /**
- * Error 403 Forbidden
+ * 403 Forbidden
  * @param {Response} res
  * @returns {Object} JSON object
  */
@@ -87,7 +87,7 @@ export const sendForbidden = (res: Response): object => {
 };
 
 /**
- * Error 404 Resource Not Found
+ * 404 Resource Not Found
  * @param {Response} res
  * @returns {Object} JSON object
  */
@@ -97,7 +97,7 @@ export const sendNotFound = (res: Response): object => {
 };
 
 /**
- * Error 404 Data Not Found
+ * 404 Data Not Found
  * @param {Response} res
  * @param {Object} data
  * @returns {Object} JSON object
@@ -108,7 +108,7 @@ export const sendNotFoundData = (res: Response, message?: string): object => {
 };
 
 /**
- * Error 405 Method not allowed
+ * 405 Method not allowed
  * @param {Response} res
  * @param {string} message
  * @returns {Object} JSON object
@@ -119,7 +119,7 @@ export const sendMethodNotAllowed = (res: Response): object => {
 };
 
 /**
- * Error 429 Too Many Request
+ * 429 Too many request
  * @param {Response} res
  * @param {string} message
  * @returns {Object} JSON object
@@ -130,7 +130,7 @@ export const sendTooManyRequests = (res: Response, message?: string): object => 
 };
 
 /**
- * Error 500 Internal Server Error
+ * 500 Internal server error
  * @param {Response} res
  * @returns {Object} JSON object
  */
