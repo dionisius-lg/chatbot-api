@@ -90,6 +90,10 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
+            if (!faq_category || !language_code) {
+                continue;
+            }
+
             let faqCategory = faqCategories.data.find((obj: Record<string, any>) => obj.name.toLowerCase() === faq_category.toLowerCase());
             let faqLanguage = languages.data.find((obj: Record<string, any>) => obj.code.toLowerCase() === language_code.toLowerCase());
 

@@ -89,7 +89,7 @@ export const refreshAuth = async (req: Request, res: Response) => {
                 refresh_expire: createRefreshToken.expire
             }
         }
-    
+
         return sendSuccess(res, result);
     }
 
