@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
+import { unlinkSync } from "fs";
 import * as faqsModel from "./../models/faqs";
 import * as faqAnswersModel from "./../models/faq_answers";
+import * as languagesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel } from "./../helpers/thread";
 import { filterColumn, filterData } from "./../helpers/request";
@@ -62,7 +64,9 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['answer', 'intent'];
+        const allowedKeys = ['answer', 'intent', 'language_code'];
+
+        unlinkSync(file.path);
 
         if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
@@ -75,7 +79,7 @@ export const importData = async (req: Request, res: Response) => {
         }
 
         for (let i in excel.data) {
-            let { intent, ...row } = excel.data[i];
+            let { intent, language_code, ...row } = excel.data[i];
 
             filterColumn(row, allowedKeys);
             filterData(row);
@@ -88,7 +92,9 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
-            let faq = faqs.data.find((obj: Record<string, any>) => obj.intent.toLowerCase() === intent.toLowerCase());
+            let faq = faqs.data.find((obj: Record<string, any>) =>
+                obj.intent.toLowerCase() === intent.toLowerCase() && obj.language_code.toLowerCase() === language_code.toLowerCase()
+            );
 
             if (!faq) {
                 continue;

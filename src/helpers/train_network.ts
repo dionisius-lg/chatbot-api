@@ -16,16 +16,23 @@ const trainNetwork = async (): Promise<number> => {
             const manager = new NlpManager({ languages });
     
             for (let i in faqs.data) {
-                let { id, intent, faq_category, language_code } = faqs.data[i];
+                let { id, intent, language_code } = faqs.data[i];
                 let faqQuestions = await faqQuestionsModel.getAll({ is_active: 1, limit: 0, faq_id: id });
                 let faqAnswers = await faqAnswersModel.getAll({ is_active: 1, limit: 0, faq_id: id });
     
-                if (faqQuestions.total_data > 0 && faqQuestions.data) {
-                    faqQuestions.data.forEach((row) => manager.addDocument(language_code, row.question, `${faq_category}.${intent}`));
+                if (faqQuestions.total_data > 0 && faqQuestions.data && intent !== 'none') {
+                    faqQuestions.data.forEach((row) => manager.addDocument(language_code, row.question, `${language_code}.${intent}`));
                 }
     
                 if (faqAnswers.total_data > 0 && faqAnswers.data) {
-                    faqAnswers.data.forEach((row) => manager.addAnswer(language_code, `${faq_category}.${intent}`, row.answer));
+                    switch (intent) {
+                        case 'none':
+                            faqAnswers.data.forEach((row) => manager.addAnswer(language_code, `${intent.charAt(0).toUpperCase() + intent.slice(1)}`, row.answer));
+                            break;
+                        default:
+                            faqAnswers.data.forEach((row) => manager.addAnswer(language_code, `${language_code}.${intent}`, row.answer));
+                            break;
+                    }
                 }
             }
     

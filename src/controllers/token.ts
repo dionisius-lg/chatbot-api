@@ -7,7 +7,7 @@ import * as tokenHelper from "./../helpers/token";
 
 export const auth = async (req: Request, res: Response) => {
     const { body: { username, password }, headers, socket: { remoteAddress } } = req;
-    const { data } = await usersModel.getDetail({ username, is_active: 1 });
+    const { data } = await usersModel.getDetail({ username, is_active: 1, is_auth: 1 });
 
     if (data === false) {
         return sendNotFoundData(res, 'User not found. Please input a registered username');

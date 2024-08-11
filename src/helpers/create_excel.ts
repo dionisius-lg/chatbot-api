@@ -1,15 +1,19 @@
 import { workerData, parentPort } from "worker_threads";
 import exceljs from "exceljs";
+import moment from "moment-timezone";
 import { existsSync, mkdirSync, createWriteStream, statSync } from "fs";
 import config from "./../config";
 import { isEmpty, randomString, excelColumnName } from "./value";
 
-const { file_dir } = config;
+const { timezone, file_dir } = config;
+
+moment.tz.setDefault(timezone);
 
 interface WorkerData {
     columndata: Record<string, any>;
     rowdata: Record<string, any>[];
     filename?: string;
+    subpath?: string;
 }
 
 interface WorksheetColumn {
@@ -25,7 +29,7 @@ interface Result {
     mimetype: string;
 }
 
-const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promise<Result> => {
+const createExcel = async ({ columndata, rowdata, filename, subpath = '' }: WorkerData): Promise<Result> => {
     if (filename) {
         filename = filename.split('.')[0].trim();
     } else {
@@ -39,7 +43,17 @@ const createExcel = async ({ columndata, rowdata, filename }: WorkerData): Promi
     // concat with random string and file extension
     filename += `-${randomString(16, true)}.xlsx`;
 
-    let filepath: string = `${file_dir}/excel`;
+    const ymd: string = moment(new Date()).format('YYYY/MM/DD');
+    let filepath: string = `${file_dir}/${ymd}`;
+
+    if (!isEmpty(subpath)) {
+        // replace multiple slash to single slash
+        subpath = subpath.replace(/\/+/g, '/');
+        // remove first & last slash
+        subpath = subpath.replace(/^\/|\/$/g, '');
+        // change filepath
+        filepath = `${file_dir}/${subpath}/${ymd}`;
+    }
 
     if (!existsSync(filepath)) {
         mkdirSync(filepath, { mode: 0o777, recursive: true });

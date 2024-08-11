@@ -3,7 +3,7 @@ import * as controller from "./../controllers/exports";
 
 const router: Router = express.Router();
 
-router.get('/faq_categories', controller.getFaqCategories);
+router.get('/faq_answers', controller.getFaqAnswers);
 
 router.get('/faqs', controller.getFaqs);
 

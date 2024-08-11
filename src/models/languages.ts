@@ -40,9 +40,13 @@ export const getAll = async (conditions: Conditions) => {
 
     let join: string[] = [];
 
-    if (!isEmpty(conditions?.is_export) && parseInt(conditions.is_export) === 1) {
-        customColumns.push(`@no := @no + 1 AS no`);
-        join.push(`CROSS JOIN (SELECT @no := 0) n`);
+    if (!isEmpty(conditions?.is_export)) {
+        if (parseInt(conditions.is_export) === 1) {
+            customColumns.push(`@no := @no + 1 AS no`);
+            join.push(`CROSS JOIN (SELECT @no := 0) n`);
+        }
+
+        delete conditions.is_export;
     }
 
     const groupBy = [`${table}.id`];

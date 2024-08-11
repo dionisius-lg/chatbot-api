@@ -37,7 +37,6 @@ export const getAll = async (conditions: Conditions) => {
     }
 
     let customColumns: string[] = [
-        `faq_categories.name AS faq_category`,
         `languages.name AS language`,
         `languages.code AS language_code`,
         `languages.native_name AS language_native`,
@@ -46,15 +45,18 @@ export const getAll = async (conditions: Conditions) => {
     ];
 
     let join: string[] = [
-        `LEFT JOIN faq_categories ON faq_categories.is_active = 1 AND faq_categories.id = ${table}.faq_category_id`,
-        `LEFT JOIN languages ON languages.is_active = 1 AND languages.id = ${table}.language_id`,
-        `LEFT JOIN users AS created_users ON created_users.is_active = 1 AND created_users.id = ${table}.created_by`,
-        `LEFT JOIN users AS updated_users ON updated_users.is_active = 1 AND updated_users.id = ${table}.updated_by`,
+        `LEFT JOIN languages ON languages.id = ${table}.language_id`,
+        `LEFT JOIN users AS created_users ON created_users.id = ${table}.created_by`,
+        `LEFT JOIN users AS updated_users ON updated_users.id = ${table}.updated_by`,
     ];
 
-    if (!isEmpty(conditions?.is_export) && parseInt(conditions.is_export) === 1) {
-        customColumns.push(`@no := @no + 1 AS no`);
-        join.push(`CROSS JOIN (SELECT @no := 0) n`);
+    if (!isEmpty(conditions?.is_export)) {
+        if (parseInt(conditions.is_export) === 1) {
+            customColumns.push(`@no := @no + 1 AS no`);
+            join.push(`CROSS JOIN (SELECT @no := 0) n`);
+        }
+
+        delete conditions.is_export;
     }
 
     const groupBy = [`${table}.id`];
@@ -64,7 +66,6 @@ export const getAll = async (conditions: Conditions) => {
 
 export const getDetail = async (conditions: Conditions) => {
     const customColumns: string[] = [
-        `faq_categories.name AS faq_category`,
         `languages.name AS language`,
         `languages.code AS language_code`,
         `languages.native_name AS language_native`,
@@ -73,10 +74,9 @@ export const getDetail = async (conditions: Conditions) => {
     ];
 
     const join: string[] = [
-        `LEFT JOIN faq_categories ON faq_categories.is_active = 1 AND faq_categories.id = ${table}.faq_category_id`,
-        `LEFT JOIN languages ON languages.is_active = 1 AND languages.id = ${table}.language_id`,
-        `LEFT JOIN users AS created_users ON created_users.is_active = 1 AND created_users.id = ${table}.created_by`,
-        `LEFT JOIN users AS updated_users ON updated_users.is_active = 1 AND updated_users.id = ${table}.updated_by`,
+        `LEFT JOIN languages ON languages.id = ${table}.language_id`,
+        `LEFT JOIN users AS created_users ON created_users.id = ${table}.created_by`,
+        `LEFT JOIN users AS updated_users ON updated_users.id = ${table}.updated_by`,
     ];
 
     return await dbQuery.getDetail({ table, conditions, customColumns, join });

@@ -16,6 +16,11 @@ interface Data {
 }
 
 export const getAll = async (conditions: Conditions) => {
+    const conditionTypes = {
+        date: ['created', 'updated'],
+        like: ['answer']
+    };
+
     let customConditions: string[] = [];
 
     if (!isEmpty(conditions?.start) && typeof conditions.start === 'number') {
@@ -31,16 +36,56 @@ export const getAll = async (conditions: Conditions) => {
         delete conditions.start;
     }
 
-    
-    const conditionTypes: Record<string, string[]> = {
-        like: ['fullname']
-    };
+    let customColumns: string[] = [
+        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
+        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
+    ];
 
-    return await dbQuery.getAll({ table, conditions, customConditions, conditionTypes });
+    let join: string[] = [
+        `LEFT JOIN users AS created_users ON created_users.id = ${table}.created_by`,
+        `LEFT JOIN users AS updated_users ON updated_users.id = ${table}.updated_by`,
+    ];
+
+    if (!isEmpty(conditions?.is_export)) {
+        if (parseInt(conditions.is_export) === 1) {
+            customColumns.push(`@no := @no + 1 AS no`);
+            join.push(`CROSS JOIN (SELECT @no := 0) n`);
+        }
+
+        delete conditions.is_export;
+    }
+
+    let columnDeselect: string[] = [];
+
+    if (isEmpty(conditions?.is_auth) || parseInt(conditions?.is_auth) !== 1) {
+        columnDeselect.push('password');
+        delete conditions.is_auth;
+    }
+
+    const groupBy = [`${table}.id`];
+
+    return await dbQuery.getAll({ table, conditions, conditionTypes, customConditions, customColumns, join, columnDeselect, groupBy });
 };
 
 export const getDetail = async (conditions: Conditions) => {
-    return await dbQuery.getDetail({ table, conditions });
+    const customColumns: string[] = [
+        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
+        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
+    ];
+
+    const join: string[] = [
+        `LEFT JOIN users AS created_users ON created_users.id = ${table}.created_by`,
+        `LEFT JOIN users AS updated_users ON updated_users.id = ${table}.updated_by`,
+    ];
+
+    let columnDeselect: string[] = [];
+
+    if (isEmpty(conditions?.is_auth) || parseInt(conditions?.is_auth) !== 1) {
+        columnDeselect.push('password');
+        delete conditions.is_auth;
+    }
+
+    return await dbQuery.getDetail({ table, conditions, customColumns, join, columnDeselect });
 };
 
 export const insertData = async (data: Data) => {

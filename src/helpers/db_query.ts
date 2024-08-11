@@ -540,9 +540,11 @@ export const getDetail = ({
         };
 
         let columns: string[] = [];
+        let masterColumns: string[] = [];
 
         if (typeof table === 'string' && !isEmpty(table)) {
             columns = await checkColumn({ table });
+            masterColumns = columns;
         }
 
         let column: string = '';
@@ -639,6 +641,11 @@ export const getDetail = ({
         if (join && !isEmpty(join) && _.isArrayLikeObject(join)) {
             let joinQuery: string = join.join(' ');
             query += ` ${joinQuery}`;
+        }
+
+        if (masterColumns && !isEmpty(masterColumns)) {
+            // remove invalid column from conditions
+            filterColumn(conditions, masterColumns);
         }
 
         if (conditions && !isEmpty(conditions)) {

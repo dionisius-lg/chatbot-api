@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
+import { unlinkSync } from "fs";
 import * as faqsModel from "./../models/faqs";
-import * as faqCategoriesModel from "./../models/faq_categories";
 import * as languangesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel } from "./../helpers/thread";
@@ -63,25 +63,22 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['intent', 'faq_category', 'language_code'];
+        const allowedKeys = ['intent', 'language_code'];
+
+        unlinkSync(file.path);
 
         if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
         }
 
-        const faqCategories = await faqCategoriesModel.getAll({ is_active: 1, limit: 0 });
         const languages = await languangesModel.getAll({ is_active: 1, limit: 0 });
-
-        if (faqCategories.total_data === 0 || !faqCategories.data) {
-            return sendNotFoundData(res, 'FAQ Categories not found');
-        }
 
         if (languages.total_data === 0 || !languages.data) {
             return sendBadRequest(res, 'Languanges not found');
         }
 
         for (let i in excel.data) {
-            let { faq_category, language_code, ...row } = excel.data[i];
+            let { language_code, ...row } = excel.data[i];
 
             filterColumn(row, allowedKeys);
             filterData(row);
@@ -90,21 +87,19 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
-            if (!faq_category || !language_code) {
+            if (!language_code) {
                 continue;
             }
 
-            let faqCategory = faqCategories.data.find((obj: Record<string, any>) => obj.name.toLowerCase() === faq_category.toLowerCase());
-            let faqLanguage = languages.data.find((obj: Record<string, any>) => obj.code.toLowerCase() === language_code.toLowerCase());
+            let language = languages.data.find((obj: Record<string, any>) => obj.code.toLowerCase() === language_code.toLowerCase());
 
-            if (!faqCategory || !faqLanguage) {
+            if (!language) {
                 continue;
             }
 
             data.push({
                 ...row,
-                faq_category_id: faqCategory.id,
-                language_id: faqLanguage.id,
+                language_id: language.id,
                 created_by: decoded?.user_id || null
             });
         }

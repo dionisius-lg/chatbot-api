@@ -15,7 +15,7 @@ router.get('/:id', validation(schema.detailById, 'params'), controller.getDataBy
 router.patch('/:id', validation(schema.detailById, 'params'), validation(schema.updateData, 'body'), controller.updateDataById);
 
 router.post('/import', fileValidation.single({
-    subpath: 'excel',
+    subpath: 'import',
     mimetypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
 }), controller.importData);
 

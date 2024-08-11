@@ -9,7 +9,7 @@ const { timezone } = config;
 
 moment.tz.setDefault(timezone);
 
-interface Langs {
+interface Languages {
     alpha3: string;
     alpha2: string;
     language: string;
@@ -20,28 +20,19 @@ export const inbound = async (req: Request, res: Response) => {
     const { body } = req;
 
     try {
-        const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
+        let manager = new NlpManager();
+            manager.load('model.nlp');
 
-        if (faqs.total_data > 0 && faqs.data) {
-            let languages: string[] = faqs.data.map((row: Record<string, any>) => row.language_code);
-                languages = [...new Set(languages)];
+        const languages: Languages[] = new Language().guess(body.text);
+        let language: string = 'en';
 
-            let manager = new NlpManager({ languages });
-                manager.load('model.nlp');
-
-            const langs: Langs[] = new Language().guess(body.text);
-            let lang: string = 'en';
-
-            if (langs.length > 0) {
-                lang = langs[0].alpha2;
-            }
-
-            const process = await manager.process(lang, body.text);
-
-            return sendSuccess(res, { answer: process.answer });
+        if (languages.length > 0) {
+            language = languages[0].alpha2;
         }
 
-        return sendSuccess(res, { answer: 'null' });
+        const process = await manager.process(language, body.text);
+
+        return sendSuccess(res, { answer: process.answer });
     } catch (err: any) {
         return sendBadRequest(res);
     }

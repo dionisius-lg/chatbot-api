@@ -1,6 +1,6 @@
 import { workerData, parentPort } from "worker_threads";
 import exceljs from "exceljs";
-import { createReadStream, unlinkSync } from "fs";
+import { createReadStream } from "fs";
 
 interface Result {
     [key: string]: any;
@@ -36,8 +36,7 @@ const readExcel = async (file: Express.Multer.File): Promise<Result[]> => {
                             let rowData: Record<string, any> = {};
                             model.cells.forEach((cell, i) => {
                                 if (headers[i]) {
-                                    let value = `${cell.value}`.toLowerCase().replace(/[^0-9a-z ]/gi, '').replace( /\s\s+/g, ' ').replace(/ /g,"_");
-                                    rowData[headers[i]] = value;
+                                    rowData[headers[i]] = cell.value;
                                 }
                             });
                             result.push(rowData);
@@ -50,8 +49,6 @@ const readExcel = async (file: Express.Multer.File): Promise<Result[]> => {
             break;
         }
 
-        // remove file
-        unlinkSync(file.path);
         stream.close();
 
         return result;
