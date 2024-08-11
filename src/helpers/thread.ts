@@ -6,6 +6,7 @@ interface Data {
     columndata: Record<string, any>;
     rowdata: Record<string, any>[];
     filename?: string;
+    subpath?: string;
 }
 
 interface Result {

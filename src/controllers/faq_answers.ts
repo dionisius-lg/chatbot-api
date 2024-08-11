@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
-import * as faqCategoriesModel from "./../models/faq_categories";
+import { unlinkSync } from "fs";
+import * as faqsModel from "./../models/faqs";
+import * as faqAnswersModel from "./../models/faq_answers";
+import * as languagesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel } from "./../helpers/thread";
 import { filterColumn, filterData } from "./../helpers/request";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
-    const result = await faqCategoriesModel.getAll(query);
+    const result = await faqAnswersModel.getAll(query);
 
     if (result.total_data > 0) {
         return sendSuccess(res, result);
@@ -17,7 +20,7 @@ export const getData = async (req: Request, res: Response) => {
 
 export const getDataById = async (req: Request, res: Response) => {
     const { params: { id } } = req;
-    const result = await faqCategoriesModel.getDetail({ id });
+    const result = await faqAnswersModel.getDetail({ id });
 
     if (result.total_data > 0) {
         return sendSuccess(res, result);
@@ -31,7 +34,7 @@ export const createData = async (req: Request, res: Response) => {
 
     body.created_by = decoded?.user_id || null;
 
-    const result = await faqCategoriesModel.insertData(body);
+    const result = await faqAnswersModel.insertData(body);
 
     if (result.data) {
         return sendSuccessCreated(res, result);
@@ -45,7 +48,7 @@ export const updateDataById = async (req: Request, res: Response) => {
 
     body.update_by = decoded?.user_id || null;
 
-    const result = await faqCategoriesModel.updateData(body, { id });
+    const result = await faqAnswersModel.updateData(body, { id });
 
     if (result.data) {
         return sendSuccess(res, result);
@@ -61,14 +64,22 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['name'];
+        const allowedKeys = ['answer', 'intent', 'language_code'];
+
+        unlinkSync(file.path);
 
         if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
         }
 
+        const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
+
+        if (faqs.total_data === 0 || !faqs.data) {
+            return sendNotFoundData(res, 'FAQ not found');
+        }
+
         for (let i in excel.data) {
-            let row = excel.data[i];
+            let { intent, language_code, ...row } = excel.data[i];
 
             filterColumn(row, allowedKeys);
             filterData(row);
@@ -77,15 +88,28 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
+            if (!intent) {
+                continue;
+            }
+
+            let faq = faqs.data.find((obj: Record<string, any>) =>
+                obj.intent.toLowerCase() === intent.toLowerCase() && obj.language_code.toLowerCase() === language_code.toLowerCase()
+            );
+
+            if (!faq) {
+                continue;
+            }
+
             data.push({
                 ...row,
+                faq_id: faq.id,
                 created_by: decoded?.user_id || null
             });
         }
     }
 
     if (data.length > 0) {
-        const result = await faqCategoriesModel.insertManyData(data);
+        const result = await faqAnswersModel.insertManyData(data);
 
         if (result.total_data > 0) {
             return sendSuccessCreated(res, result);

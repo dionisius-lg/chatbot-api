@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import moment from "moment-timezone";
 import multer, { Options } from "multer";
 import { isObjectLike } from "lodash";
+import config from "./../config";
 import storage from "./../config/storage";
 import { sendBadRequest } from "./../helpers/response";
 import { mimeFilter } from "./../helpers/file";
+
+const { timezone } = config;
+
+moment.tz.setDefault(timezone);
 
 interface FileConfig {
     fieldname?: string;
