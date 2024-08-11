@@ -63,7 +63,7 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['answer', 'intent', 'language_code'];
+        const allowedKeys = ['question', 'intent', 'language_code'];
 
         unlinkSync(file.path);
 
