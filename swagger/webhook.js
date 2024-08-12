@@ -3,7 +3,7 @@ const docs = {
     method: {
         post: {
             security: [{ apiKeyAuth: [] }],
-            summary: 'post token',
+            summary: 'post webhook',
             requestBody: {
                 content: {
                     'application/x-www-form-urlencoded': {

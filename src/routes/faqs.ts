@@ -19,4 +19,6 @@ router.post('/import', fileValidation.single({
     mimetypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
 }), controller.importData);
 
+router.post('/train', controller.trainData);
+
 export default router;
