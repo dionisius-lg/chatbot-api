@@ -39,8 +39,8 @@ export const getAll = async (conditions: Conditions) => {
     let customColumns: string[] = [
         `faqs.intent`,
         `languages.name AS language`,
-        `languages.code AS language_code`,
         `languages.native_name AS language_native`,
+        `languages.locale AS locale`,
         `IFNULL(created_users.fullname, created_users.username) AS created_user`,
         `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
     ];
@@ -70,8 +70,8 @@ export const getDetail = async (conditions: Conditions) => {
     const customColumns: string[] = [
         `faqs.intent`,
         `languages.name AS language`,
-        `languages.code AS language_code`,
         `languages.native_name AS language_native`,
+        `languages.locale AS locale`,
         `IFNULL(created_users.fullname, created_users.username) AS created_user`,
         `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
     ];

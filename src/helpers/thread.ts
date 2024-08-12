@@ -24,6 +24,10 @@ interface ResultReadExcel extends Result {
     data?: Record<string, any>[];
 }
 
+interface ResultTrainNetwork extends Result {
+    data?: Record<string, number>[];
+}
+
 export const createExcel = (data: Data): Promise<ResultCreateExcel> => {
     return new Promise((resolve, reject) => {
         let resolvePath: string;
@@ -94,7 +98,7 @@ export const readExcel = (data: Express.Multer.File): Promise<ResultReadExcel> =
     });
 };
 
-export const trainNetwork = (): Promise<ResultReadExcel> => {
+export const trainNetwork = (): Promise<ResultTrainNetwork> => {
     return new Promise((resolve) => {
         let resolvePath: string;
         let workerOptions: WorkerOptions = {};

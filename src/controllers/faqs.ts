@@ -3,7 +3,7 @@ import { unlinkSync } from "fs";
 import * as faqsModel from "./../models/faqs";
 import * as languangesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
-import { readExcel } from "./../helpers/thread";
+import { readExcel, trainNetwork } from "./../helpers/thread";
 import { filterColumn, filterData } from "./../helpers/request";
 
 export const getData = async (req: Request, res: Response) => {
@@ -63,7 +63,7 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['intent', 'language_code'];
+        const allowedKeys = ['intent', 'locale'];
 
         unlinkSync(file.path);
 
@@ -78,7 +78,7 @@ export const importData = async (req: Request, res: Response) => {
         }
 
         for (let i in excel.data) {
-            let { language_code, ...row } = excel.data[i];
+            let { locale, ...row } = excel.data[i];
 
             filterColumn(row, allowedKeys);
             filterData(row);
@@ -87,11 +87,11 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
-            if (!language_code) {
+            if (!locale) {
                 continue;
             }
 
-            let language = languages.data.find((obj: Record<string, any>) => obj.code.toLowerCase() === language_code.toLowerCase());
+            let language = languages.data.find((obj: Record<string, any>) => obj.locale.toLowerCase() === locale.toLowerCase());
 
             if (!language) {
                 continue;
@@ -114,4 +114,17 @@ export const importData = async (req: Request, res: Response) => {
     }
 
     return sendBadRequest(res);
+};
+
+
+export const trainData = async (req: Request, res: Response) => {
+    const train = await trainNetwork();
+
+    if (!train.success || !train.data) {
+        return sendBadRequest(res, train.error);
+    }
+
+    const { data } = train;
+
+    return sendSuccessCreated(res, { total_data: 1, data });
 };

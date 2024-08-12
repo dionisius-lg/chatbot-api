@@ -12,7 +12,8 @@
 # misc
 /package-lock.json
 /key.txt
-/model.nlp
+/lang.txt
+/model.txt
 
 # build dist
 /dist

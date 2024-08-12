@@ -3,6 +3,6 @@ import * as controller from "./../controllers/webhook";
 
 const router: Router = express.Router();
 
-router.post('/', controller.inbound);
+router.post('/', controller.message);
 
 export default router;
