@@ -3,13 +3,14 @@ import swagger from "swagger-ui-express";
 import path from "path";
 import { readdirSync } from "fs";
 import { getContent } from "./../helpers/file";
+import { isEmpty } from "./../helpers/value";
 
-interface SwaggerTags {
+interface SwaggerTag {
     name: string;
     description?: string;
 }
 
-interface SwaggerPaths {
+interface SwaggerPath {
     [key: string]: any;
 }
 
@@ -21,7 +22,7 @@ interface SwaggerMethod {
     delete?: { [key:string]: any };
 }
 
-interface SwaggerRow {
+interface SwaggerData {
     path: string;
     method: SwaggerMethod;
 }
@@ -33,49 +34,70 @@ const setupSwagger = async (req: Request, res: Response, next: NextFunction) => 
     const pkg = JSON.parse(getContent('package.json'));
     const basepath = path.resolve('./', 'swagger');
 
-    let tags: SwaggerTags[] = [];
-    let paths: SwaggerPaths = {};
+    let tags: SwaggerTag[] = [];
+    let paths: SwaggerPath = {};
 
-    const files = readdirSync(basepath).filter((file: string) => file.includes('.') && ['.js'].includes(path.extname(file)));
+    const files = readdirSync(basepath).filter((file: string) => file.includes('.') && ['.json'].includes(path.extname(file)));
 
     await Promise.all(files.map(async (file: string) => {
-        let pathname = path.parse(file).name;
-        let tagname = pathname.replace(/_/g, ' ');
-        let filedoc = await import(path.join(basepath, file));
-        let datadoc = Array.isArray(filedoc) ? filedoc : filedoc.default || [];
+        let data: SwaggerData[];
 
-        if (!tags.some(tag => tag.name === tagname)) {
-            tags.push({ name: tagname });
-        }
+        try {
+            let filedata = await import(path.join(basepath, file));
 
-        datadoc.forEach((row: SwaggerRow) => {
-            Object.keys(row.method).forEach((method) => {
-                let methodType = method as keyof SwaggerMethod;
-                if (row.method[methodType]) {
-                    row.method[methodType].tags = [tagname];
-                    row.method[methodType].responses = {
-                        200: { description: 'success ok' },
-                        201: { description: 'success created' },
-                        400: { description: 'bad request' },
-                        401: { description: 'unauthorized' },
-                        403: { description: 'forbidden' },
-                        404: { description: 'not found' },
-                        405: { description: 'method not allowed' },
-                        429: { description: 'too many request' },
-                        500: { description: 'internal server error' }
-                    };
-                }
-            })
-
-            switch (row.path) {
-                case '/':
-                    paths[`/${pathname}`] = row.method;
+            switch (true) {
+                case (filedata?.default && Array.isArray(filedata.default)):
+                    data = filedata.default;
+                    break;
+                case (Array.isArray(filedata.default)):
+                    data = filedata;
                     break;
                 default:
-                    paths[`/${pathname}${row.path}`] = row.method;
+                    data = [];
                     break;
             }
-        });
+        } catch (err) {
+            data = [];
+        }
+
+        if (!isEmpty(data)) {
+            let pathname = path.parse(file).name;
+            let tagname = pathname.replace(/_/g, ' ');
+
+            if (!tags.some(tag => tag.name === tagname)) {
+                tags.push({ name: tagname });
+            }
+
+            data.forEach((row) => {
+                Object.keys(row.method).forEach((method) => {
+                    let methodType = method as keyof SwaggerMethod;
+
+                    if (row.method[methodType]) {
+                        row.method[methodType].tags = [tagname];
+                        row.method[methodType].responses = {
+                            200: { description: 'success ok' },
+                            201: { description: 'success created' },
+                            400: { description: 'bad request' },
+                            401: { description: 'unauthorized' },
+                            403: { description: 'forbidden' },
+                            404: { description: 'not found' },
+                            405: { description: 'method not allowed' },
+                            429: { description: 'too many request' },
+                            500: { description: 'internal server error' }
+                        };
+                    }
+
+                    switch (row.path) {
+                        case '/':
+                            paths[`/${pathname}`] = row.method;
+                            break;
+                        default:
+                            paths[`/${pathname}${row.path}`] = row.method;
+                            break;
+                    }
+                });
+            });
+        }
     }));
 
     const swaggerDocument =  {

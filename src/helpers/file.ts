@@ -8,7 +8,7 @@ export const mimeFilter = (mimetypes: string[]) => {
             return callback(null, true);
         }
 
-        callback(new Error('Invalid file type. Only the following types are allowed: ' + mimetypes.join(', ')), false);
+        callback(new Error('Invalid file type. Only the following type(s) are allowed: ' + mimetypes.join(', ')), false);
     }
 };
 
