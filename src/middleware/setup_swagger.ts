@@ -37,7 +37,7 @@ const setupSwagger = async (req: Request, res: Response, next: NextFunction) => 
     let tags: SwaggerTag[] = [];
     let paths: SwaggerPath = {};
 
-    const files = readdirSync(basepath).filter((file: string) => file.includes('.') && ['.json'].includes(path.extname(file)));
+    const files = readdirSync(basepath).filter((file: string) => file.includes('.') && ['.js'].includes(path.extname(file)));
 
     await Promise.all(files.map(async (file: string) => {
         let data: SwaggerData[];
@@ -104,7 +104,7 @@ const setupSwagger = async (req: Request, res: Response, next: NextFunction) => 
         openapi: '3.0.0',
         info: {
             title: `docs ${pkg?.name}`,
-            description: 'this is a list of available apis',
+            description: pkg?.description || '',
             version: pkg?.version || '1.0.0',
         },
         swagger_ui_extra_configuration: {

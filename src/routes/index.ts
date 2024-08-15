@@ -4,6 +4,7 @@ import path from "path";
 import config from "./../config";
 import { sendBadRequest, sendInternalServerError, sendNotFound } from "./../helpers/response";
 import { authenticateToken, authenticateRefreshToken, authenticateKey } from "./../middleware/auth";
+import { getContent } from "./../helpers/file";
 
 const router: Router = express.Router();
 const basename: string = path.basename(__filename);
@@ -36,7 +37,11 @@ const unlessPath = (pathArr: string[] = [], middleware: (req: Request, res: Resp
 };
 
 router.get('/', (req: Request, res: Response) => {
-    return res.send({ app: 'Chabot API' });
+    const pkg = JSON.parse(getContent('package.json'));
+    return res.send({
+        app: pkg?.name || 'rest api',
+        description: pkg?.description || ''
+    });
 });
 
 // enable auth middleware except for some routes
