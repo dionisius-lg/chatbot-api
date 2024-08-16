@@ -15,11 +15,9 @@ interface Result {
 }
 
 interface ResultCreateExcel extends Result {
-    filename?: string;
-    filepath?: string;
-    filesize?: number;
-    mimetype?: string;
+    data?: Record<string, string | number>;
 }
+
 interface ResultReadExcel extends Result {
     data?: Record<string, any>[];
 }

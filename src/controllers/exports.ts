@@ -28,17 +28,11 @@ export const getFaqAnswers = async (req: Request, res: Response) => {
 
         const excel = await createExcel({ columndata, rowdata: data, filename: 'report-faq-answers', subpath: 'export' });
 
-        if (!excel.success) {
+        if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
         }
 
-        const filedata = {
-            filename: excel.filename,
-            filepath: excel.filepath,
-            filesize: excel.filesize,
-            mimetype: excel.mimetype
-        };
-
+        const { destination, ...filedata } = excel.data;
         const encrypted = encrypt(JSON.stringify(filedata));
         const protocol = secure ? 'https' : 'http';
         const link = `${protocol}://${host}/files/${encrypted}`;
@@ -70,17 +64,11 @@ export const getFaqs = async (req: Request, res: Response) => {
 
         const excel = await createExcel({ columndata, rowdata: data, filename: 'report-faqs', subpath: 'export' });
 
-        if (!excel.success) {
+        if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
         }
 
-        const filedata = {
-            filename: excel.filename,
-            filepath: excel.filepath,
-            filesize: excel.filesize,
-            mimetype: excel.mimetype
-        };
-
+        const { destination, ...filedata } = excel.data;
         const encrypted = encrypt(JSON.stringify(filedata));
         const protocol = secure ? 'https' : 'http';
         const link = `${protocol}://${host}/files/${encrypted}`;
@@ -109,17 +97,11 @@ export const getLanguages = async (req: Request, res: Response) => {
 
         const excel = await createExcel({ columndata, rowdata: data, filename: 'report-languages', subpath: 'export' });
 
-        if (!excel.success) {
+        if (!excel.success || !excel.data) {
             return sendBadRequest(res, excel.error);
         }
 
-        const filedata = {
-            filename: excel.filename,
-            filepath: excel.filepath,
-            filesize: excel.filesize,
-            mimetype: excel.mimetype
-        };
-
+        const { destination, ...filedata } = excel.data;
         const encrypted = encrypt(JSON.stringify(filedata));
         const protocol = secure ? 'https' : 'http';
         const link = `${protocol}://${host}/files/${encrypted}`;

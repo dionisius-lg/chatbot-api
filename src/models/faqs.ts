@@ -1,7 +1,7 @@
 import moment from "moment-timezone";
 import config from "./../config";
 import * as dbQuery from "./../helpers/db_query";
-import { isEmpty } from "./../helpers/value";
+import { isEmpty, isNumeric } from "./../helpers/value";
 
 const { timezone } = config;
 const table = 'faqs';
@@ -23,11 +23,11 @@ export const getAll = async (conditions: Conditions) => {
 
     let customConditions: string[] = [];
 
-    if (!isEmpty(conditions?.start) && typeof conditions.start === 'number') {
+    if (!isEmpty(conditions?.start) && isNumeric(conditions.start)) {
         let start: string = moment(conditions.start * 1000).format('YYYY-MM-DD');
         let end: string = start;
 
-        if (!isEmpty(conditions?.end) && typeof conditions.end === 'number') {
+        if (!isEmpty(conditions?.end) && isNumeric(conditions.end)) {
             end = moment(conditions.end * 1000).format('YYYY-MM-DD');
             delete conditions.end;
         }

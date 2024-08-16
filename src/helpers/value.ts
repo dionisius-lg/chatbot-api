@@ -35,6 +35,7 @@ export const isJson = (value: any): any | false => {
 };
 
 export const isNumeric = (value: any): boolean => {
+    return !isNaN(parseFloat(value)) && isFinite(value);
     return (
         value === undefined ||
         value === null ||
