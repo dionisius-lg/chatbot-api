@@ -10,23 +10,22 @@ export const download = async (req: Request, res: Response) => {
         const decrypted = decrypt(id);
         const decryptedObject = JSON.parse(decrypted);
 
-        const filename = decryptedObject?.filename || '';
-        const filepath = decryptedObject?.filepath || '';
-        const filesize = decryptedObject?.filesize || 0;
         const mimetype = decryptedObject?.mimetype || '';
-        const fullpath = (`${filepath}/${filename}`).replace(/\/+/g, '/');
+        const filename = decryptedObject?.filename || '';
+        const path = decryptedObject?.path || '';
+        const size = decryptedObject?.size || 0;
 
-        if (!existsSync(fullpath)) {
+        if (!existsSync(path)) {
             throw new Error('File not found');
         }
 
         res.set({
             'Content-Disposition': `attachment; filename=${filename}`,
             'Content-Type': mimetype,
-            'Content-Length': filesize
+            'Content-Length': size
         });
 
-        return res.download(fullpath, (err) => {
+        return res.download(path, (err) => {
             if (err) {
                 throw new Error('File cannot be downloaded');
             }

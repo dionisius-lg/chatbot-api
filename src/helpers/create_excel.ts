@@ -23,10 +23,11 @@ interface WorksheetColumn {
 }
 
 interface Result {
-    filename: string;
-    filepath: string;
-    filesize: number;
     mimetype: string;
+    destination: string;
+    filename: string;
+    path: string;
+    size: number;
 }
 
 const createExcel = async ({ columndata, rowdata, filename, subpath = '' }: WorkerData): Promise<Result> => {
@@ -119,16 +120,17 @@ const createExcel = async ({ columndata, rowdata, filename, subpath = '' }: Work
     const filestats = statSync(`${filepath}/${filename}`);
 
     return {
-        filename,
-        filepath,
-        filesize: filestats.size,
-        mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        destination: filepath,
+        filename: filename,
+        path: `${filepath}/${filename}`,
+        size: filestats.size
     };
 };
 
 createExcel(workerData)
     .then((result: Result) => {
-        parentPort?.postMessage({ success: true, ...result });
+        parentPort?.postMessage({ success: true, data: result });
     })
     .catch((err) => {
         parentPort?.postMessage({ success: false, error: err.message });

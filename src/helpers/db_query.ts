@@ -4,7 +4,7 @@ import config from "./../config";
 import pool, { escape, QueryError, RowDataPacket, ResultSetHeader } from "./../config/pool";
 import { getDataQuery, setDataQuery, deleteDataQuery } from "./chache";
 import { filterColumn, filterData } from "./request";
-import { isEmpty } from "./value";
+import { isEmpty, isNumeric } from "./value";
 
 const { timezone, database, cache } = config;
 
@@ -281,7 +281,7 @@ export const getAll = ({
 
         let limit: number = 20;
 
-        if (conditions && !_.isNaN(conditions?.limit) && /^\d+$/.test(conditions?.limit)) {
+        if (conditions && isNumeric(conditions?.limit) && conditions?.limit >= 0) {
             limit = conditions.limit;
         }
 
