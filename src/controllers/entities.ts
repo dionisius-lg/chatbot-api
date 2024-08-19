@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { unlinkSync } from "fs";
-import * as faqsModel from "./../models/faqs";
+import * as entitiesModel from "./../models/entities";
 import * as languagesModel from "./../models/languages";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel, trainNetwork } from "./../helpers/thread";
@@ -9,10 +9,11 @@ import { isEmpty } from "./../helpers/value";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
-    const result = await faqsModel.getAll(query);
+    let { total_data, data } = await entitiesModel.getAll(query);
 
-    if (result.total_data > 0) {
-        return sendSuccess(res, result);
+    if (total_data > 0 && data) {
+        data = data.map(row => (row.aliases = JSON.parse(row?.aliases) || [], row));
+        return sendSuccess(res, { total_data, data });
     }
 
     return sendNotFoundData(res);
@@ -20,10 +21,11 @@ export const getData = async (req: Request, res: Response) => {
 
 export const getDataById = async (req: Request, res: Response) => {
     const { params: { id } } = req;
-    const result = await faqsModel.getDetail({ id });
+    let { total_data, data } = await entitiesModel.getDetail({ id });
 
-    if (result.total_data > 0) {
-        return sendSuccess(res, result);
+    if (total_data > 0 && data) {
+        data.aliases = JSON.parse(data?.aliases) || [];
+        return sendSuccess(res, { total_data, data });
     }
 
     return sendNotFoundData(res);
@@ -31,15 +33,16 @@ export const getDataById = async (req: Request, res: Response) => {
 
 export const createData = async (req: Request, res: Response) => {
     let { body, decoded } = req;
-    const language = await languagesModel.getDetail({ is_active: 1, id: body?.language_id });
+    const language = await languagesModel.getDetail({ id: body?.language_id, is_active: 1 });
 
     if (language.total_data === 0 || !language.data) {
         return sendNotFoundData(res, 'Language not found');
     }
 
+    body.aliases = JSON.stringify(body?.aliases) || [];
     body.created_by = decoded?.user_id || null;
 
-    const result = await faqsModel.insertData(body);
+    const result = await entitiesModel.insertData(body);
 
     if (result.data) {
         return sendSuccessCreated(res, result);
@@ -52,16 +55,20 @@ export const updateDataById = async (req: Request, res: Response) => {
     let { body, params: { id }, decoded } = req;
 
     if (body?.language_id) {
-        const language = await languagesModel.getDetail({ is_active: 1, id: body.language_id });
+        const language = await languagesModel.getDetail({ id: body?.language_id, is_active: 1 });
 
         if (language.total_data === 0 || !language.data) {
             return sendNotFoundData(res, 'Language not found');
         }
     }
 
+    if (body.aliases) {
+        body.aliases = JSON.stringify(body.aliases);
+    }
+
     body.update_by = decoded?.user_id || null;
 
-    const result = await faqsModel.updateData(body, { id });
+    const result = await entitiesModel.updateData(body, { id });
 
     if (result.data) {
         return sendSuccess(res, result);
@@ -77,7 +84,7 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['category', 'intent', 'locale'];
+        const allowedKeys = ['category', 'intent', 'locale', 'aliases'];
 
         unlinkSync(file.path);
 
@@ -97,10 +104,6 @@ export const importData = async (req: Request, res: Response) => {
             filterColumn(row, allowedKeys);
             filterData(row);
 
-            if (Object.keys(row).length === 0) {
-                continue;
-            }
-
             let { category, intent } = row;
 
             if (isEmpty(category) || isEmpty(intent) || isEmpty(locale)) {
@@ -119,18 +122,35 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
+            let aliases: string[] = [intent];
+
+            if (!isEmpty(row.aliases)) {
+                row.aliases.split(',').forEach((item: any) => {
+                    if (typeof item === 'string') {
+                        let cleaned = item.replace(/[^a-zA-Z0-9]/g, '');
+
+                        if (cleaned.length > 0) {
+                            aliases.push(cleaned);
+                        }
+                    }
+                });
+
+                aliases = [...new Set(aliases)];
+            }
+
             data.push({
                 ...row,
                 category,
                 intent,
                 language_id: languageData.id,
+                aliases: JSON.stringify(aliases),
                 created_by: decoded?.user_id || null
             });
         }
     }
 
     if (data.length > 0) {
-        const result = await faqsModel.insertManyData(data);
+        const result = await entitiesModel.insertManyData(data);
 
         if (result.total_data > 0) {
             return sendSuccessCreated(res, result);

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import moment from "moment-timezone";
 import { NlpManager, Language } from "node-nlp";
+import Handlebars from "handlebars";
 import config from "./../config";
 import * as faqAnswersModel from "./../models/faq_answers";
 import { sendSuccess, sendNotFoundData, sendInternalServerError } from "./../helpers/response";
@@ -16,6 +17,14 @@ interface LangGuesser {
     alpha2: string;
     language: string;
     score: number;
+}
+
+interface ManagerProcessed {
+    locale: string;
+    utterance: string;
+    answer: string;
+    sentiment: Record<string, string | number>;
+    entities?: Record<string, string | number>[];
 }
 
 export const message = async (req: Request, res: Response) => {
@@ -36,9 +45,11 @@ export const message = async (req: Request, res: Response) => {
             langGuessed = langGuesser[0].alpha2;
         }
 
-        const managerProcess: Record<string, any> = await manager.process(langGuessed, body.text);
+        const managerProcessed: ManagerProcessed = await manager.process(langGuessed, body.text);
+        let { locale, utterance, answer, sentiment, entities } = managerProcessed;
+        let entity: Record<string, string | number> = {};
 
-        if (isEmpty(managerProcess.answer)) {
+        if (isEmpty(answer)) {
             const faqAnswers = await faqAnswersModel.getAll({ is_active: 1, limit: 0, intent: 'none' });
 
             if (faqAnswers.total_data === 0 || !faqAnswers.data) {
@@ -48,14 +59,25 @@ export const message = async (req: Request, res: Response) => {
             const answers = faqAnswers.data.map((row) => row.answer);
             const randomIndex = Math.floor(Math.random() * answers.length);
 
-            managerProcess.answer = answers[randomIndex];
+            managerProcessed.answer = answers[randomIndex];
+        }
+
+        if (entities && !isEmpty(entities)) {
+            entities.forEach((row) => {
+                entity[row.entity] = row.option;
+            });
+        }
+
+        if (!isEmpty(entity)) {
+            answer = answer.replace(/%([^%]+)%/g, (_, word) => `{{${word}}}`);
+            answer = Handlebars.compile(answer)(entity);
         }
 
         const data = {
-            locale: managerProcess.locale,
-            question: managerProcess.utterance,
-            answer: managerProcess.answer,
-            sentiment: managerProcess.sentiment
+            locale: locale,
+            question: utterance,
+            answer: answer,
+            sentiment: sentiment
         };
 
         return sendSuccess(res, { total_data: 1, data });
