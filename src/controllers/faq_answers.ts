@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import { unlinkSync } from "fs";
-import * as faqsModel from "./../models/faqs";
 import * as faqAnswersModel from "./../models/faq_answers";
+import * as faqsModel from "./../models/faqs";
 import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
 import { readExcel } from "./../helpers/thread";
 import { filterColumn, filterData } from "./../helpers/request";
+import { isEmpty } from "./../helpers/value";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
@@ -30,6 +31,11 @@ export const getDataById = async (req: Request, res: Response) => {
 
 export const createData = async (req: Request, res: Response) => {
     let { body, decoded } = req;
+    const faq = await faqsModel.getDetail({ is_active: 1, id: body?.faq_id });
+
+    if (faq.total_data === 0 || !faq.data) {
+        return sendNotFoundData(res, 'FAQ not found');
+    }
 
     body.created_by = decoded?.user_id || null;
 
@@ -44,6 +50,14 @@ export const createData = async (req: Request, res: Response) => {
 
 export const updateDataById = async (req: Request, res: Response) => {
     let { body, params: { id }, decoded } = req;
+
+    if (body?.faq_id) {
+        const faq = await faqsModel.getDetail({ is_active: 1, id: body.faq_id });
+
+        if (faq.total_data === 0 || !faq.data) {
+            return sendNotFoundData(res, 'FAQ not found');
+        }
+    }
 
     body.update_by = decoded?.user_id || null;
 
@@ -63,7 +77,7 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['answer', 'intent', 'locale'];
+        const allowedKeys = ['answer', 'category', 'intent', 'locale'];
 
         unlinkSync(file.path);
 
@@ -78,7 +92,7 @@ export const importData = async (req: Request, res: Response) => {
         }
 
         for (let i in excel.data) {
-            let { intent, locale, ...row } = excel.data[i];
+            let { category, intent, locale, ...row } = excel.data[i];
 
             filterColumn(row, allowedKeys);
             filterData(row);
@@ -87,12 +101,12 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
-            if (!intent) {
+            if (isEmpty(category) || isEmpty(intent) || isEmpty(locale)) {
                 continue;
             }
 
             let faq = faqs.data.find((obj: Record<string, any>) =>
-                obj.intent.toLowerCase() === intent.toLowerCase() && obj.locale.toLowerCase() === locale.toLowerCase()
+                obj.category.toLowerCase() === category.toLowerCase() && obj.intent.toLowerCase() === intent.toLowerCase() && obj.locale.toLowerCase() === locale.toLowerCase()
             );
 
             if (!faq) {
