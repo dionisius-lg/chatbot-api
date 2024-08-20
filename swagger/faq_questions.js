@@ -3,21 +3,16 @@ const docs = {
     method: {
         get: {
             security: [{ bearerAuth: [] }],
-            summary: 'get faq data',
+            summary: 'get faq question data',
             parameters: [
                 {
                     in: 'query',
-                    name: 'category',
+                    name: 'question',
                     schema: { type: 'string' }
                 },
                 {
                     in: 'query',
-                    name: 'intent',
-                    schema: { type: 'string' }
-                },
-                {
-                    in: 'query',
-                    name: 'language_id',
+                    name: 'faq_id',
                     schema: { type: 'integer' }
                 },
                 {
@@ -56,18 +51,17 @@ const docs = {
         },
         post: {
             security: [{ bearerAuth: [] }],
-            summary: 'create new faq data',
+            summary: 'create new faq question data',
             requestBody: {
                 content: {
                     'application/x-www-form-urlencoded': {
                         schema: {
                             type: 'object',
                             properties: {
-                                category: { type: 'string', default: '' },
-                                intent: { type: 'string', default: '' },
-                                language_id: { type: 'integer', default: '' },
+                                question: { type: 'string', default: '' },
+                                faq_id: { type: 'integer', default: '' },
                             },
-                            required: ['category', 'intent', 'language_id'],
+                            required: ['question', 'language_id'],
                         },
                     },
                 },
@@ -81,7 +75,7 @@ const docsById = {
     method: {
         get: {
             security: [{ bearerAuth: [] }],
-            summary: 'get faq data by id',
+            summary: 'get faq question data by id',
             parameters: [
                 {
                     in: 'path',
@@ -93,16 +87,15 @@ const docsById = {
         },
         patch: {
             security: [{ bearerAuth: [] }],
-            summary: 'update existing faq data by id',
+            summary: 'update existing faq question data by id',
             requestBody: {
                 content: {
                     'application/x-www-form-urlencoded': {
                         schema: {
                             type: 'object',
                             properties: {
-                                category: { type: 'string', default: '' },
-                                intent: { type: 'string', default: '' },
-                                language_id: { type: 'integer', default: '' },
+                                question: { type: 'string', default: '' },
+                                faq_id: { type: 'integer', default: '' },
                                 is_active: { type: 'integer', default: '', enum: ['0', '1'] },
                             },
                         },
@@ -118,7 +111,7 @@ const docImport = {
     method: {
         post: {
             security: [{ bearerAuth: [] }],
-            summary: 'import faq data',
+            summary: 'import faq question data',
             requestBody: {
                 content: {
                     'multipart/form-data': {
@@ -136,19 +129,8 @@ const docImport = {
     },
 };
 
-const docTrain = {
-    path: '/train',
-    method: {
-        post: {
-            security: [{ bearerAuth: [] }],
-            summary: 'train network from faq data',
-        },
-    },
-};
-
 export default [
     docs,
     docsById,
-    docImport,
-    docTrain
+    docImport
 ];
