@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import moment from "moment-timezone";
 import { NlpManager, Language } from "node-nlp";
-import Handlebars from "handlebars";
 import config from "./../config";
 import * as faqAnswersModel from "./../models/faq_answers";
 import { sendSuccess, sendNotFoundData, sendInternalServerError } from "./../helpers/response";
@@ -47,7 +46,6 @@ export const message = async (req: Request, res: Response) => {
 
         const managerProcessed: ManagerProcessed = await manager.process(langGuessed, body.text);
         let { locale, utterance, answer, sentiment, entities } = managerProcessed;
-        let entity: Record<string, string | number> = {};
 
         if (isEmpty(answer)) {
             const faqAnswers = await faqAnswersModel.getAll({ is_active: 1, limit: 0, intent: 'none' });
@@ -63,14 +61,15 @@ export const message = async (req: Request, res: Response) => {
         }
 
         if (entities && !isEmpty(entities)) {
-            entities.forEach((row) => {
-                entity[row.entity] = row.option;
-            });
-        }
+            const entity = entities.reduce((acc, item) => {
+                if (!acc[item.entity]) {
+                    acc[item.entity] = item.sourceText;
+                }
 
-        if (!isEmpty(entity)) {
-            answer = answer.replace(/%([^%]+)%/g, (_, word) => `{{${word}}}`);
-            answer = Handlebars.compile(answer)(entity);
+                return acc;
+            }, {});
+
+            answer = answer.replace(/%(\w+)%/g, (_, word) => entity[word] || word);
         }
 
         const data = {

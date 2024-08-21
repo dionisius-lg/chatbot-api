@@ -37,7 +37,7 @@ const setupSwagger = async (req: Request, res: Response, next: NextFunction) => 
     let tags: SwaggerTag[] = [];
     let paths: SwaggerPath = {};
 
-    const files = readdirSync(basepath).filter((file: string) => file.includes('.') && ['.js'].includes(path.extname(file)));
+    const files = readdirSync(basepath).filter((file: string) => file.includes('.') && ['.json'].includes(path.extname(file)));
 
     await Promise.all(files.map(async (file: string) => {
         let data: SwaggerData[];

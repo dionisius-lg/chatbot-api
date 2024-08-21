@@ -1,21 +1,16 @@
-export const randomString = (size: number = 32, numeric: boolean = false, specialchar: boolean = false): string => {
-    let string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    let result = '';
+export const isEmpty = (value: any): boolean => {
+    return (
+        value === undefined ||
+        value === null ||
+        (Array.isArray(value) && value.length === 0) ||
+        (typeof value === 'object' && Object.keys(value).length === 0) ||
+        (typeof value === 'string' && value.trim().length === 0) ||
+        (typeof value === 'number' && value < 1)
+    );
+};
 
-    if (numeric) {
-        string += '1234567890';
-    }
-
-    if (specialchar) {
-        string += '!@#$&';
-    }
-
-    for (let i = 0; i < size; i++) {
-        let random = Math.floor(Math.random() * string.length);
-        result += string.charAt(random);
-    }
-
-    return result;
+export const isNumeric = (value: any): boolean => {
+    return !isNaN(parseFloat(value)) && isFinite(value);
 };
 
 export const isJson = (value: any): any | false => {
@@ -34,15 +29,6 @@ export const isJson = (value: any): any | false => {
     }
 };
 
-export const isNumeric = (value: any): boolean => {
-    return !isNaN(parseFloat(value)) && isFinite(value);
-    return (
-        value === undefined ||
-        value === null ||
-        !isNaN(Number(value.toString()))
-    );
-};
-
 export const isDomainAddress = (value: string): boolean => {  
     if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(value) || value.includes('localhost')) {
         return false;
@@ -51,15 +37,24 @@ export const isDomainAddress = (value: string): boolean => {
     return true;
 };
 
-export const isEmpty = (value: any): boolean => {
-    return (
-        value === undefined ||
-        value === null ||
-        (Array.isArray(value) && value.length === 0) ||
-        (typeof value === 'object' && Object.keys(value).length === 0) ||
-        (typeof value === 'string' && value.trim().length === 0) ||
-        (typeof value === 'number' && value < 1)
-    );
+export const randomString = (size: number = 32, numeric: boolean = false, specialchar: boolean = false): string => {
+    let string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let result = '';
+
+    if (numeric) {
+        string += '1234567890';
+    }
+
+    if (specialchar) {
+        string += '!@#$&';
+    }
+
+    for (let i = 0; i < size; i++) {
+        let random = Math.floor(Math.random() * string.length);
+        result += string.charAt(random);
+    }
+
+    return result;
 };
 
 export const maskSensitiveData = (data: Record<string, any>): Record<string, any> => {
