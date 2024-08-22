@@ -139,6 +139,16 @@
           }
         ],
         "summary": "update existing faq data by id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {

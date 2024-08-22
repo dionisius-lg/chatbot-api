@@ -1,0 +1,220 @@
+[
+    {
+      "path": "/",
+      "method": {
+        "get": {
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "summary": "get entity data",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "category",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "intent",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "language_id",
+              "schema": {
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "is_active",
+              "schema": {
+                "nullable": true,
+                "type": "integer",
+                "enum": ["0", "1"]
+              }
+            },
+            {
+              "in": "query",
+              "name": "created",
+              "schema": {
+                "type": "date"
+              }
+            },
+            {
+              "in": "query",
+              "name": "created_by",
+              "schema": {
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "updated_by",
+              "schema": {
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "start",
+              "schema": {
+                "type": "timestamp"
+              }
+            },
+            {
+              "in": "query",
+              "name": "end",
+              "schema": {
+                "type": "timestamp"
+              }
+            }
+          ]
+        },
+        "post": {
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "summary": "create new entity data",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string"
+                    },
+                    "intent": {
+                      "type": "string"
+                    },
+                    "language_id": {
+                      "type": "integer"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["answer", "intent", "language_id"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/{id}",
+      "method": {
+        "get": {
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "summary": "get entity data by id",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "schema": {
+                "type": "integer"
+              },
+              "required": true
+            }
+          ]
+        },
+        "patch": {
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "summary": "update existing entity data by id",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "schema": {
+                "type": "integer"
+              },
+              "required": true
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string"
+                    },
+                    "intent": {
+                      "type": "string"
+                    },
+                    "language_id": {
+                      "type": "integer"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "is_active": {
+                      "type": "integer",
+                      "enum": ["0", "1"]
+                    }
+                  },
+                  "required": ["answer", "intent", "language_id"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/import",
+      "method": {
+        "post": {
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "summary": "import entity data",
+          "requestBody": {
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "string",
+                      "format": "binary",
+                      "description": "must be .xlsx"
+                    }
+                  },
+                  "required": ["file"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+  
