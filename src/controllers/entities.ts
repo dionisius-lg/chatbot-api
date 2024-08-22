@@ -9,11 +9,12 @@ import { isEmpty } from "./../helpers/value";
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
-    let { total_data, data } = await entitiesModel.getAll(query);
+    let result = await entitiesModel.getAll(query);
 
-    if (total_data > 0 && data) {
-        data = data.map(row => (row.aliases = JSON.parse(row?.aliases) || [], row));
-        return sendSuccess(res, { total_data, data });
+    if (result.total_data > 0 && result.data) {
+        let { data } = result;
+        result.data = data.map(row => (row.sources = JSON.parse(row?.sources) || [], row));
+        return sendSuccess(res, result);
     }
 
     return sendNotFoundData(res);
@@ -24,7 +25,7 @@ export const getDataById = async (req: Request, res: Response) => {
     let { total_data, data } = await entitiesModel.getDetail({ id });
 
     if (total_data > 0 && data) {
-        data.aliases = JSON.parse(data?.aliases) || [];
+        data.sources = JSON.parse(data?.sources) || [];
         return sendSuccess(res, { total_data, data });
     }
 
@@ -39,7 +40,23 @@ export const createData = async (req: Request, res: Response) => {
         return sendNotFoundData(res, 'Language not found');
     }
 
-    body.aliases = JSON.stringify(body?.aliases) || [];
+    let sources: string[] = [body.intent];
+
+    if (body?.sources) {
+        body.sources.forEach((item: any) => {
+            if (typeof item === 'string') {
+                let cleaned = item.replace(/[^a-zA-Z0-9]/g, '');
+
+                if (cleaned.length > 0) {
+                    sources.push(cleaned);
+                }
+            }
+        });
+
+        sources = [...new Set(sources)];
+    }
+
+    body.sources = JSON.stringify(sources);
     body.created_by = decoded?.user_id || null;
 
     const result = await entitiesModel.insertData(body);
@@ -54,6 +71,14 @@ export const createData = async (req: Request, res: Response) => {
 export const updateDataById = async (req: Request, res: Response) => {
     let { body, params: { id }, decoded } = req;
 
+    const { data } = await entitiesModel.getDetail({ id });
+
+    if (!data) {
+        return sendNotFoundData(res);
+    }
+
+    let sources: string[] = body?.intent && [body.intent] || [data.intent];
+
     if (body?.language_id) {
         const language = await languagesModel.getDetail({ id: body?.language_id, is_active: 1 });
 
@@ -62,10 +87,21 @@ export const updateDataById = async (req: Request, res: Response) => {
         }
     }
 
-    if (body.aliases) {
-        body.aliases = JSON.stringify(body.aliases);
+    if (body?.sources) {
+        body.sources.forEach((item: any) => {
+            if (typeof item === 'string') {
+                let cleaned = item.replace(/[^a-zA-Z0-9]/g, '');
+
+                if (cleaned.length > 0) {
+                    sources.push(cleaned);
+                }
+            }
+        });
+
+        sources = [...new Set(sources)];
     }
 
+    body.sources = JSON.stringify(sources);
     body.update_by = decoded?.user_id || null;
 
     const result = await entitiesModel.updateData(body, { id });
@@ -84,7 +120,7 @@ export const importData = async (req: Request, res: Response) => {
 
     if (file) {
         const excel = await readExcel(file);
-        const allowedKeys = ['category', 'intent', 'locale', 'aliases'];
+        const allowedKeys = ['category', 'intent', 'locale', 'sources'];
 
         unlinkSync(file.path);
 
@@ -122,20 +158,20 @@ export const importData = async (req: Request, res: Response) => {
                 continue;
             }
 
-            let aliases: string[] = [intent];
+            let sources: string[] = [intent];
 
-            if (!isEmpty(row.aliases)) {
-                row.aliases.split(',').forEach((item: any) => {
+            if (!isEmpty(row.sources)) {
+                row.sources.split(',').forEach((item: any) => {
                     if (typeof item === 'string') {
                         let cleaned = item.replace(/[^a-zA-Z0-9]/g, '');
 
                         if (cleaned.length > 0) {
-                            aliases.push(cleaned);
+                            sources.push(cleaned);
                         }
                     }
                 });
 
-                aliases = [...new Set(aliases)];
+                sources = [...new Set(sources)];
             }
 
             data.push({
@@ -143,7 +179,7 @@ export const importData = async (req: Request, res: Response) => {
                 category,
                 intent,
                 language_id: languageData.id,
-                aliases: JSON.stringify(aliases),
+                sources: JSON.stringify(sources),
                 created_by: decoded?.user_id || null
             });
         }
