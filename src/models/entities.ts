@@ -36,6 +36,11 @@ export const getAll = async (conditions: Conditions) => {
         delete conditions.start;
     }
 
+    if (!isEmpty(conditions?.sources) && typeof conditions.sources === 'string') {
+        customConditions.push(`JSON_SEARCH(${table}.sources, 'one', '%${conditions.sources.toLowerCase()}%') IS NOT NULL`);
+        delete conditions.sources;
+    }
+
     let customColumns: string[] = [
         `languages.name AS language`,
         `languages.native_name AS language_native`,

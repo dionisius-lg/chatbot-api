@@ -33,6 +33,13 @@
             },
             {
               "in": "query",
+              "name": "sources",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
               "name": "is_active",
               "schema": {
                 "nullable": true,
