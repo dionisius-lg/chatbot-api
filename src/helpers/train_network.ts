@@ -1,4 +1,6 @@
 import { parentPort } from "worker_threads";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import { NlpManager } from "node-nlp";
 import * as entitiesModel from "./../models/entities";
 import * as faqAnswersModel from "./../models/faq_answers";
