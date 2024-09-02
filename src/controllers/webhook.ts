@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import moment from "moment-timezone";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import { NlpManager, Language } from "node-nlp";
 import config from "./../config";
 import * as faqAnswersModel from "./../models/faq_answers";
