@@ -59,7 +59,7 @@ export const message = async (req: Request, res: Response) => {
             const answers = faqAnswers.data.map((row) => row.answer);
             const randomIndex = Math.floor(Math.random() * answers.length);
 
-            managerProcessed.answer = answers[randomIndex];
+            answer = answers[randomIndex];
         }
 
         if (entities && !isEmpty(entities)) {
