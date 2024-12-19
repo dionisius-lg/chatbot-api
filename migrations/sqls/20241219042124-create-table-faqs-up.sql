@@ -1,13 +1,12 @@
-CREATE TABLE IF NOT EXISTS `users` (
+CREATE TABLE `faqs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(20) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  `fullname` varchar(100) DEFAULT NULL,
+  `category` varchar(50) DEFAULT NULL,
+  `intent` varchar(50) DEFAULT NULL,
+  `language_id` int(11) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime DEFAULT current_timestamp(),
-  `created_by` int(11) DEFAULT 1,
+  `created_by` int(11) DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
   `updated_by` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UNIQUE` (`username`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

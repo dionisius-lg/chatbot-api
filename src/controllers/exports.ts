@@ -20,7 +20,7 @@ export const getFaqAnswers = async (req: Request, res: Response) => {
             language_native: 'Language Native',
             locale: 'Locale',
             is_active: 'Is Active',
-            created: 'Created',
+            created_at: 'Created At',
             created_user: 'Created By',
             updated: 'Updated',
             updated_user: 'Updated By'
@@ -56,7 +56,7 @@ export const getFaqs = async (req: Request, res: Response) => {
             language_native: 'Language Native',
             locale: 'Locale',
             is_active: 'Is Active',
-            created: 'Created',
+            created_at: 'Created At',
             created_user: 'Created By',
             updated: 'Updated',
             updated_user: 'Updated By'
@@ -91,8 +91,8 @@ export const getLanguages = async (req: Request, res: Response) => {
             native_name: 'Native Name',
             locale: 'Locale',
             is_active: 'Is Active',
-            created: 'Created',
-            updated: 'Updated'
+            created_at: 'Created At',
+            updated_at: 'Updated At'
         };
 
         const excel = await createExcel({ columndata, rowdata: data, filename: 'report-languages', subpath: 'export' });

@@ -16,7 +16,7 @@ interface Data {
 
 export const getAll = async (conditions: Conditions) => {
     const conditionTypes: Record<string, string[]> = {
-        date: ['expired', 'created', 'updated']
+        date: ['expired_at', 'created_at', 'updated_at']
     };
 
     return await dbQuery.getAll({ table, conditions, conditionTypes });
