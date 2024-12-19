@@ -16,10 +16,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // enable static files
 app.use('/public', express.static('public', { index: false }));
-// log all access
-logger.access(app);
 // setup swagger
 app.use('/docs', swagger.serve, setupSwagger);
+// log all access
+logger.access(app);
 // define all route
 app.use(router);
 // disable x-powered-by

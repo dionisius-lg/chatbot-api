@@ -17,7 +17,7 @@ interface Data {
 
 export const getAll = async (conditions: Conditions) => {
     const conditionTypes = {
-        date: ['created', 'updated'],
+        date: ['created_at', 'updated_at'],
         like: ['intent']
     };
 
@@ -32,7 +32,7 @@ export const getAll = async (conditions: Conditions) => {
             delete conditions.end;
         }
 
-        customConditions.push(`DATE(${table}.created) BETWEEN '${start}' AND '${end}'`);
+        customConditions.push(`DATE(${table}.created_at) BETWEEN '${start}' AND '${end}'`);
         delete conditions.start;
     }
 
