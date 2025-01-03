@@ -28,7 +28,7 @@ interface ManagerProcessed {
     entities?: Record<string, string | number>[];
 }
 
-export const message = async (req: Request, res: Response) => {
+export const chat = async (req: Request, res: Response) => {
     const { body } = req;
 
     try {
@@ -36,7 +36,7 @@ export const message = async (req: Request, res: Response) => {
 
         const languages: string[] = langContent && JSON.parse(langContent) || [];
         const manager = new NlpManager({ languages });
-        const langGuesser: LangGuesser[] = new Language().guess(body.text, languages);
+        const langGuesser: LangGuesser[] = new Language().guess(body.message, languages);
 
         manager.load('model.txt');
 
@@ -46,7 +46,7 @@ export const message = async (req: Request, res: Response) => {
             langGuessed = langGuesser[0].alpha2;
         }
 
-        const managerProcessed: ManagerProcessed = await manager.process(langGuessed, body.text);
+        const managerProcessed: ManagerProcessed = await manager.process(langGuessed, body.message);
         let { locale, utterance, answer, sentiment, entities } = managerProcessed;
 
         if (isEmpty(answer)) {

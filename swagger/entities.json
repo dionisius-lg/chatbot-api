@@ -142,7 +142,7 @@
             }
           ]
         },
-        "patch": {
+        "put": {
           "security": [
             {
               "bearerAuth": []
