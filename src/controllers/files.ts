@@ -8,6 +8,11 @@ export const download = async (req: Request, res: Response) => {
 
     try {
         const decrypted = decrypt(id);
+
+        if (typeof decrypted !== 'string') {
+            throw new Error('File not found');
+        }
+
         const decryptedObject = JSON.parse(decrypted);
 
         const mimetype = decryptedObject?.mimetype || '';

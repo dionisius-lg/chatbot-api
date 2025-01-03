@@ -5,7 +5,7 @@ import { sendSuccess, sendNotFoundData } from "./../helpers/response";
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
     const result = await languagesModel.getAll(query);
-
+console.log(result)
     if (result.total_data > 0) {
         return sendSuccess(res, result);
     }

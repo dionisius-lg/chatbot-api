@@ -1,6 +1,6 @@
 [
   {
-    "path": "/",
+    "path": "/chat",
     "method": {
       "post": {
         "security": [
@@ -15,12 +15,12 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "text": {
+                  "message": {
                     "type": "string",
                     "default": ""
                   }
                 },
-                "required": ["text"]
+                "required": ["message"]
               }
             }
           }

@@ -3,51 +3,22 @@ import { readdirSync } from "fs";
 import path from "path";
 import config from "./../config";
 import { sendBadRequest, sendInternalServerError, sendNotFound } from "./../helpers/response";
-import { authenticateToken, authenticateRefreshToken, authenticateKey } from "./../middleware/auth";
 import { getContent } from "./../helpers/file";
 
 const router: Router = express.Router();
 const basename: string = path.basename(__filename);
 const { env } = config;
 
-const publicPath: string[] = ['/token', '/files'];
-const refreshPath = ['/token/refresh']
-const apiKeyPath: string[] = ['/webhook'];
+router.get('/', (req: Request, res: Response) => {
+    let pkg = JSON.parse(getContent('package.json'));
 
-const matchInArray = (string: string, expression: RegExp[]): boolean => {
-    for (let exp of expression) {
-        if (string.match(exp)) {
-            return true;
-        }
+    if (pkg?.name && typeof pkg.name === 'string') {
+        // split the string into an array by hyphens, capitalize the first letter of each word, join the words with a space
+        pkg.name = pkg.name.split('-').map((w: string) => w === 'api' ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
 
-    return false;
-};
-
-const unlessPath = (pathArr: string[] = [], middleware: (req: Request, res: Response, next: NextFunction) => void) => {
-    return function(req: Request, res: Response, next: NextFunction) {
-        const insideRegex = matchInArray(req.path, pathArr.map((p) => new RegExp(p)));
-
-        if (pathArr.includes(req.path) || insideRegex) {
-            return next();
-        }
-
-        return middleware(req, res, next);
-    };
-};
-
-router.get('/', (req: Request, res: Response) => {
-    const pkg = JSON.parse(getContent('package.json'));
-    return res.send({
-        app: pkg?.name || 'rest api',
-        description: pkg?.description || ''
-    });
+    return res.send({ app: pkg?.name || 'API', description: pkg?.description || '' });
 });
-
-// enable auth middleware except for some routes
-router.use(apiKeyPath, authenticateKey);
-router.use(refreshPath, authenticateRefreshToken);
-router.use(unlessPath([...publicPath, ...refreshPath, ...apiKeyPath], authenticateToken));
 
 readdirSync(__dirname).filter((file: string) => {
     if (env === 'production') {

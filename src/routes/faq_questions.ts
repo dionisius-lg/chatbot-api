@@ -3,18 +3,19 @@ import * as controller from "./../controllers/faq_questions";
 import validation from "./../middleware/validation";
 import fileValidation from "./../middleware/file_validation";
 import schema from "./../schemas/faq_questions";
+import { authenticateToken } from "./../middleware/auth";
 
 const router: Router = express.Router();
 
-router.get('/', controller.getData);
+router.get('/', authenticateToken, controller.getData);
 
-router.post('/', validation(schema.createData, 'body'), controller.createData);
+router.post('/', authenticateToken, validation(schema.createData, 'body'), controller.createData);
 
-router.get('/:id', validation(schema.detailById, 'params'), controller.getDataById);
+router.get('/:id', authenticateToken, validation(schema.detailById, 'params'), controller.getDataById);
 
-router.patch('/:id', validation(schema.detailById, 'params'), validation(schema.updateData, 'body'), controller.updateDataById);
+router.put('/:id', authenticateToken, validation(schema.detailById, 'params'), validation(schema.updateData, 'body'), controller.updateDataById);
 
-router.post('/import', fileValidation.single({
+router.post('/import', authenticateToken, fileValidation.single({
     subpath: 'import',
     mimetypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
 }), controller.importData);

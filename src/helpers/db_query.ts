@@ -57,45 +57,11 @@ export const checkColumn = ({
     });
 };
 
-interface CheckCustomFieldOptions {
-    table: string;
-}
-
-export const checkCustomField = ({
-    table
-}: CheckCustomFieldOptions): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-        const query: string = `SELECT * FROM custom_fields WHERE is_active = 1 AND source_table = '${table}'`;
-
-        pool.query(query, (err: QueryError | null, result?: RowDataPacket[] | undefined) => {
-            if (err) {
-                console.error(err);
-                return resolve([]);
-            }
-
-            if (!result || isEmpty(result)) {
-                return resolve([]);
-            }
-
-            const columns = result.map((row) => ({
-                field_key: row.field_key,
-                field_type_id: row.field_type_id
-            }));
-
-            return resolve(columns);
-        });
-    });
-};
-
 interface CountDataOptions {
     table: string;
     conditions?: Record<string, any>;
     conditionTypes?: ConditionTypes;
     customConditions?: string[];
-    attributeColumn?: string;
-    customFields?: string[];
-    customDropdownFields?: string[];
-    customAttributes?: Record<string, any>;
     join?: string[];
     groupBy?: string[];
     having?: string[];
@@ -106,10 +72,6 @@ export const countData = ({
     conditions,
     conditionTypes,
     customConditions,
-    attributeColumn,
-    customFields,
-    customDropdownFields,
-    customAttributes,
     join,
     groupBy,
     having
@@ -160,29 +122,6 @@ export const countData = ({
             query += ` WHERE ${queryCond}`;
         }
 
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            // for custom attributes
-            let queryLine: string;
-
-            if (customAttributes && !isEmpty(customAttributes)) {
-                for (let k in customAttributes) {
-                    switch (true) {
-                        case (customDropdownFields && customDropdownFields.includes(k)):
-                            queryLine = `JSON_EXTRACT(${table}.${attributeColumn}, '$.${k}.id') = ${escape(customAttributes[k])}`;
-                            break;
-                        default:
-                            queryLine = `JSON_EXTRACT(LOWER(${table}.${attributeColumn}), '$.${k}') = LOWER(${escape(customAttributes[k])})`;
-                            break;
-                    }
-
-                    setCustomCond.push(queryLine);
-                }
-
-                queryCond = setCustomCond.join((' AND '));
-                query += (conditions && !isEmpty(conditions)) ? ` AND ${queryCond}` : ` WHERE ${queryCond}`;
-            }
-        }
-
         if (customConditions && !isEmpty(customConditions) && _.isArrayLikeObject(customConditions)) {
             queryCond = ` WHERE ` + customConditions.join(' AND ');
 
@@ -231,7 +170,6 @@ interface GetAllOptions {
     columnSelect?: string[];
     columnDeselect?: string[];
     customColumns?: string[];
-    attributeColumn?: string;
     join?: string[];
     groupBy?: string[];
     customOrders?: string[];
@@ -247,7 +185,6 @@ export const getAll = ({
     columnSelect,
     columnDeselect,
     customColumns,
-    attributeColumn,
     join,
     groupBy,
     customOrders,
@@ -263,7 +200,6 @@ export const getAll = ({
         let columns: string[] = await checkColumn({ table });
         const masterColumns = columns;
         let column: string = '';
-        const customAttributes = conditions ? { ... conditions } : {};
         const sortData: string[] = ['ASC', 'DESC'];
 
         let order: boolean | string = conditions && conditions?.order || columns[0];
@@ -281,24 +217,13 @@ export const getAll = ({
 
         let limit: number = 20;
 
-        if (conditions && isNumeric(conditions?.limit) && conditions?.limit >= 0) {
-            limit = conditions.limit;
+        if (conditions && isNumeric(conditions?.limit)) {
+            limit = parseInt(conditions.limit);
         }
 
-        let page: number = conditions && _.toNumber(conditions?.page) || 1;
+        let page: number = conditions && isNumeric(conditions?.page) && parseInt(conditions.limit) || 1;
         let setCond: string[] = [];
         let queryCond: string = '';
-        let getCustomFields: any[] = [];
-        let customFields: string[] = [];
-        let customDropdownFields: string[] = [];
-
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            getCustomFields = await checkCustomField({ table });
-            customFields = _.map(getCustomFields, 'field_key');
-            const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
-            customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            filterColumn(customAttributes, customFields);
-        }
 
         if (columnSelect && !isEmpty(columnSelect) && _.isArrayLikeObject(columnSelect)) {
             // filter data from all table columns, only keep selected columns
@@ -330,22 +255,6 @@ export const getAll = ({
         }
 
         column = columns.join(', ');
-
-        if (attributeColumn && customFields && !isEmpty(customFields)) {
-            let customField: string = '';
-            let setCustomField: string[] = [];
-
-            for (let i in customFields) {
-                if (customDropdownFields && customDropdownFields.includes(customField[i])) {
-                    setCustomField.push(`CONCAT_WS('||', JSON_UNQUOTE(JSON_EXTRACT(${table}.${attributeColumn}, '$.${customFields[i]}.id')), JSON_UNQUOTE(JSON_EXTRACT(${table}.${attributeColumn}, '$.${customFields[i]}.value'))) AS ${customFields[i]}`);
-                } else {
-                    setCustomField.push(`JSON_UNQUOTE(JSON_EXTRACT(${table}.${attributeColumn}, '$.${customFields[i]}')) AS ${customFields[i]}`);
-                }
-            }
-
-            customField = setCustomField.join(', ');
-            column += (!isEmpty(column)) ? `, ${customField}` : `${customField}`;
-        }
 
         if (customColumns && !isEmpty(customColumns) && _.isArrayLikeObject(customColumns)) {
             if (isEmpty(columns)) {
@@ -393,26 +302,6 @@ export const getAll = ({
                     }
                 }
             });
-        }
-
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            // for custom attributes
-            let queryLine: string;
-
-            if (customAttributes && !isEmpty(customAttributes)) {
-                for (let k in customAttributes) {
-                    switch (true) {
-                        case (customDropdownFields && customDropdownFields.includes(k)):
-                            queryLine = `JSON_EXTRACT(${table}.${attributeColumn}, '$.${k}.id') = ${escape(customAttributes[k])}`;
-                            break;
-                        default:
-                            queryLine = `JSON_EXTRACT(LOWER(${table}.${attributeColumn}), '$.${k}') = LOWER(${escape(customAttributes[k])})`;
-                            break;
-                    }
-
-                    setCond.push(queryLine);
-                }
-            }
         }
 
         queryCond = setCond.join(' AND ');
@@ -467,10 +356,6 @@ export const getAll = ({
             conditions,
             conditionTypes,
             customConditions,
-            attributeColumn,
-            customFields,
-            customDropdownFields,
-            customAttributes,
             join,
             groupBy,
             having
@@ -495,7 +380,7 @@ export const getAll = ({
             if (!result || isEmpty(result)) {
                 return resolve(resultData);
             }
-
+            console.log('------------', limit, typeof limit)
             resultData.total_data = count;
             resultData.data = result;
             resultData.limit = limit;
@@ -517,7 +402,6 @@ interface GetDetailOptions {
     columnSelect?: string[];
     columnDeselect?: string[];
     customColumns?: string[];
-    attributeColumn?: string;
     join?: string[];
     cacheKey?: string;
 }
@@ -529,7 +413,6 @@ export const getDetail = ({
     columnSelect,
     columnDeselect,
     customColumns,
-    attributeColumn,
     join,
     cacheKey
 }: GetDetailOptions): Promise<ResultDataObject> => {
@@ -548,24 +431,8 @@ export const getDetail = ({
         }
 
         let column: string = '';
-        const customAttributes = conditions ? { ... conditions } : {};
-
         let setCond: string[] = [];
         let queryCond:  string = '';
-        let getCustomFields: any[] = [];
-        let customFields: string[] = [];
-        let customDropdownFields: string[] = [];
-
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            if (typeof table === 'string' && !isEmpty(table)) {
-                getCustomFields = await checkCustomField({ table });
-            }
-
-            customFields = _.map(getCustomFields, 'field_key');
-            const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
-            customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            filterColumn(customAttributes, customFields);
-        }
 
         if (columnSelect && !isEmpty(columnSelect) && _.isArrayLikeObject(columnSelect)) {
             // filter data from all table columns, only keep selected columns
@@ -597,22 +464,6 @@ export const getDetail = ({
         }
 
         column = columns.join(', ');
-
-        if (attributeColumn && customFields && !isEmpty(customFields)) {
-            let customField: string = '';
-            let setCustomField: string[] = [];
-
-            for (let i in customFields) {
-                if (customDropdownFields && customDropdownFields.includes(customField[i])) {
-                    setCustomField.push(`CONCAT_WS('||', JSON_UNQUOTE(JSON_EXTRACT(${table}.${attributeColumn}, '$.${customFields[i]}.id')), JSON_UNQUOTE(JSON_EXTRACT(${table}.${attributeColumn}, '$.${customFields[i]}.value'))) AS ${customFields[i]}`);
-                } else {
-                    setCustomField.push(`JSON_UNQUOTE(JSON_EXTRACT(${table}.${attributeColumn}, '$.${customFields[i]}')) AS ${customFields[i]}`);
-                }
-            }
-
-            customField = setCustomField.join(', ');
-            column += (!isEmpty(column)) ? `, ${customField}` : `${customField}`;
-        }
 
         if (customColumns && !isEmpty(customColumns) && _.isArrayLikeObject(customColumns)) {
             if (isEmpty(columns)) {
@@ -718,7 +569,6 @@ export const getDetail = ({
 interface InsertDataOptions {
     table: string;
     data: Record<string, any>;
-    attributeColumn?: string;
     protectedColumns?: string[];
     cacheKeys?: string[];
 }
@@ -726,7 +576,6 @@ interface InsertDataOptions {
 export const insertData = ({
     table,
     data,
-    attributeColumn,
     protectedColumns,
     cacheKeys
 }: InsertDataOptions): Promise<ResultDataObject> => {
@@ -739,17 +588,12 @@ export const insertData = ({
         let timeChar: string[] = ['CURRENT_TIMESTAMP()', 'NOW()'];
         let nullChar: string[] = ['NULL', ''];
 
-        const dataCustom: { [key: string]: any } = { ... data };
         const columns: string[] = await checkColumn({ table });
 
         // remove invalid column from data
         filterColumn(data, columns);
         // remove invalid data
         filterData(data);
-
-        let getCustomFields: any[] = [];
-        let customFields: string[] = [];
-        let customDropdownFields: string[] = [];
 
         let keys: string[] = Object.keys(data);
 
@@ -760,20 +604,10 @@ export const insertData = ({
             return resolve(resultData);
         }
 
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            getCustomFields = await checkCustomField({ table });
-            customFields = _.map(getCustomFields, 'field_key');
-            const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
-            customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            filterColumn(dataCustom, customFields);
-        }
-
         let column: string = keys.join(', ');
 
         let query: string = `INSERT INTO ${table} (${column}) VALUES ?`;
-        // let values: string[] = [];
         let values: (string | number | null)[][] = [];
-        let dataCustomField: Record<string, any> = {};
 
         let tempVal = Object.keys(data).map(k => {
             let dataVal: string | number | null = null;
@@ -796,28 +630,6 @@ export const insertData = ({
 
             return dataVal;
         });
-
-        Object.keys(dataCustom).forEach((k) => {
-            if (customFields && customFields.includes(k)) {
-                dataCustomField[k] = dataCustom[k];
-
-                if (customDropdownFields && customDropdownFields.includes(k)) {
-                    let dropdownData: string[] = dataCustom[k].split('||');
-                    let dropdownId: string | number = dropdownData[0] || '';
-                    let dropdownValue: string = dropdownData[1] || '';
-
-                    if (_.isNumber(dropdownId) && parseInt(dropdownId) > 0 && !isEmpty(dropdownValue)) {
-                        dataCustomField[k] = {id: dropdownId, value: dropdownValue}
-                    }
-                }
-            }
-        });
-
-        let jsonDataCustom: string = JSON.stringify(dataCustomField);
-
-        if (!isEmpty(dataCustomField)) {
-            tempVal.push(jsonDataCustom);
-        }
 
         values.push(tempVal);
 
@@ -1108,7 +920,6 @@ interface UpdateDataOptions {
     table: string;
     data: Record<string, any>;
     conditions: Record<string, any>;
-    attributeColumn?: string;
     protectedColumns?: string[];
     cacheKeys?: string[];
 }
@@ -1117,7 +928,6 @@ export const updateData = ({
     table,
     data,
     conditions,
-    attributeColumn,
     protectedColumns,
     cacheKeys
 }: UpdateDataOptions): Promise<ResultDataObject> => {
@@ -1135,8 +945,6 @@ export const updateData = ({
         let queryCond: string = '';
         let query: string = `UPDATE ${table}`;
 
-        const dataCustom: { [key: string]: any } = { ... data };
-        const customAttributes: { [key: string]: any } = { ... conditions };
         const columns: string[] = await checkColumn({ table });
 
         // remove invalid column from data
@@ -1144,21 +952,8 @@ export const updateData = ({
         // remove invalid data
         filterData(data);
 
-        let customFields: string[] = [];
-        let getCustomFields: any[] = [];
-        let customDropdownFields: string[] = [];
-
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            getCustomFields = await checkCustomField({ table });
-            customFields = _.map(getCustomFields, 'field_key');
-            const getDropdownColumn = _.filter(getCustomFields, { 'field_type_id': 5 });
-            customDropdownFields = _.map(getDropdownColumn, 'field_key');
-            filterColumn(dataCustom, customFields);
-            filterColumn(customAttributes, customFields);
-        }
-
         // reject('Update query is unsafe without data and condition')
-        if (isEmpty(data) || isEmpty(dataCustom) || isEmpty(conditions)) {
+        if (isEmpty(data) || isEmpty(conditions)) {
             return resolve(resultData);
         }
 
@@ -1168,10 +963,6 @@ export const updateData = ({
 
         if (!isEmpty(forbiddenColumns)) {
             return resolve(resultData);
-        }
-
-        if (attributeColumn && data.hasOwnProperty(attributeColumn)) {
-            delete data[attributeColumn];
         }
 
         keys.forEach(k => {
@@ -1200,35 +991,6 @@ export const updateData = ({
             }
         });
 
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            let setJsonData: string[] = [];
-
-            Object.keys(dataCustom).forEach(k => {
-                if (customFields.includes(k)) {
-                    switch (true) {
-                        case (customDropdownFields.includes(k)):
-                            let dropdownData: string[] = dataCustom[k].split('||');
-                            let dropdownId: string | number = dropdownData[0] || '';
-                            let dropdownValue: string = dropdownData[1] || '';
-
-                            if (_.isNumber(dropdownId) && parseInt(dropdownId) > 0 && !isEmpty(dropdownValue)) {
-                                setJsonData.push(`'$.${k}', JSON_OBJECT('id', ${escape(parseInt(dropdownId))}, 'value', ${escape(dropdownValue)})`);
-                            }
-                            break;
-                        default:
-                            setJsonData.push(`'$.${k}', ${escape(dataCustom[k])}`);
-                            break;
-                    }
-                }
-            });
-
-            let joinData: string = setJsonData.join(', ');
-
-            if (!isEmpty(joinData)) {
-                setData.push(`${attributeColumn} = JSON_SET(COALESCE(${attributeColumn}, '{}'), ${joinData})`);
-            }
-        }
-
         queryData = setData.join(', ');
         query += ` SET ${queryData}`;
 
@@ -1242,14 +1004,6 @@ export const updateData = ({
                     break;
             }
         });
-
-        if (attributeColumn && !isEmpty(attributeColumn)) {
-            for (let k in customAttributes) {
-                if (customFields.includes(k)) {
-                    setCond.push(`JSON_EXTRACT(LOWER(${attributeColumn}), '$.${k}') = LOWER(${escape(customAttributes[k])})`);
-                }
-            }
-        }
 
         queryCond = setCond.join(' AND ');
         query += ` WHERE ${queryCond}`;

@@ -1,8 +1,8 @@
 import Joi from "joi";
 
 const schema = {
-    message: Joi.object().keys({
-        text: Joi.string().min(1).required(),
+    chat: Joi.object().keys({
+        message: Joi.string().min(1).required(),
     }),
 };
 

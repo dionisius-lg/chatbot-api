@@ -195,16 +195,3 @@ export const importData = async (req: Request, res: Response) => {
 
     return sendBadRequest(res);
 };
-
-
-export const trainData = async (req: Request, res: Response) => {
-    const train = await trainNetwork();
-
-    if (!train.success || !train.data) {
-        return sendBadRequest(res, train.error);
-    }
-
-    const { data } = train;
-
-    return sendSuccessCreated(res, { total_data: 1, data });
-};
