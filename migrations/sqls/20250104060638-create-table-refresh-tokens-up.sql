@@ -8,5 +8,6 @@ CREATE TABLE IF NOT EXISTS `refresh_tokens` (
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `user_id` (`user_id`)
+  UNIQUE KEY `idx_user_id` (`user_id`),
+  CONSTRAINT `fk_refresh_tokens_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE SET NULL ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
