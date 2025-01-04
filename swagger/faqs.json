@@ -42,7 +42,7 @@
           },
           {
             "in": "query",
-            "name": "created",
+            "name": "created_at",
             "schema": {
               "type": "date"
             }
@@ -52,6 +52,13 @@
             "name": "created_by",
             "schema": {
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at",
+            "schema": {
+              "type": "date"
             }
           },
           {

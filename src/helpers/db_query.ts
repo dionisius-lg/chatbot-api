@@ -380,7 +380,7 @@ export const getAll = ({
             if (!result || isEmpty(result)) {
                 return resolve(resultData);
             }
-            console.log('------------', limit, typeof limit)
+
             resultData.total_data = count;
             resultData.data = result;
             resultData.limit = limit;

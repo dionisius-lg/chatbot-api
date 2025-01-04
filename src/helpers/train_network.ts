@@ -29,7 +29,7 @@ const trainNetwork = async (): Promise<Result> => {
             let languages: string[] = faqs.data.map((row) => row.locale);
                 languages = [...new Set(languages)];
 
-            putContent('lang.txt', JSON.stringify(languages));
+            putContent('lang.json', JSON.stringify(languages));
 
             const manager = new NlpManager({ languages, autoSave: false });
 
@@ -68,7 +68,7 @@ const trainNetwork = async (): Promise<Result> => {
             }
 
             await manager.train();
-            manager.save('model.txt');
+            manager.save('model.json');
 
             logger.success({
                 from: 'train network',
