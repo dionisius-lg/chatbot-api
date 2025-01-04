@@ -32,13 +32,13 @@ export const chat = async (req: Request, res: Response) => {
     const { body } = req;
 
     try {
-        let langContent = getContent('lang.txt');
+        let langContent = getContent('lang.json');
 
         const languages: string[] = langContent && JSON.parse(langContent) || [];
         const manager = new NlpManager({ languages });
         const langGuesser: LangGuesser[] = new Language().guess(body.message, languages);
 
-        manager.load('model.txt');
+        manager.load('model.json');
 
         let langGuessed: string = 'id';
 
