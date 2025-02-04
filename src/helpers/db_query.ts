@@ -221,7 +221,7 @@ export const getAll = ({
             limit = parseInt(conditions.limit);
         }
 
-        let page: number = conditions && isNumeric(conditions?.page) && parseInt(conditions.limit) || 1;
+        let page: number = conditions && isNumeric(conditions?.page) && parseInt(conditions.page) || 1;
         let setCond: string[] = [];
         let queryCond: string = '';
 
@@ -612,7 +612,7 @@ export const insertData = ({
         let tempVal = Object.keys(data).map(k => {
             let dataVal: string | number | null = null;
 
-            if (typeof data[k] !== undefined) {
+            if (typeof data[k] !== "undefined") {
                 dataVal = data[k];
 
                 if (typeof dataVal === 'string') {
@@ -733,7 +733,7 @@ export const insertManyData = ({
             tempVal = Object.keys(data[i]).map(k => {
                 let dataVal: string | number | null = null;
 
-                if (typeof data[i][k] !== undefined) {
+                if (typeof data[i][k] !== "undefined") {
                     dataVal = data[i][k];
 
                     if (typeof dataVal === 'string') {
@@ -862,7 +862,7 @@ export const insertDuplicateUpdateData = ({
             tempVal = Object.keys(data[i]).map(k => {
                 let dataVal: string | number | null = null;
 
-                if (typeof data[i][k] !== undefined) {
+                if (typeof data[i][k] !== "undefined") {
                     dataVal = data[i][k];
 
                     if (typeof dataVal === 'string') {
@@ -968,7 +968,7 @@ export const updateData = ({
         keys.forEach(k => {
             let dataVal: string | number | null = null;
 
-            if (typeof data[k] !== undefined) {
+            if (typeof data[k] !== "undefined") {
                 dataVal = data[k];
 
                 if (typeof dataVal === 'string') {
