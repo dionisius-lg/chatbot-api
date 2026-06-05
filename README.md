@@ -1,214 +1,351 @@
 # Chatbot API
 
-## Node Version
+[![Node Version](https://img.shields.io/badge/node-%3E%3D18.17.1-blue.svg)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/typescript-5.x-blue.svg)](https://www.typescriptlang.org)
+[![Express](https://img.shields.io/badge/express-4.19.2-green.svg)](https://expressjs.com)
+[![NLP.js](https://img.shields.io/badge/NLP.js-4.27.0-orange.svg)](https://github.com/axa-group/nlp.js)
 
-`18.17.1`
+**Chatbot API** is a chatbot backend built with Node.js, Express, and TypeScript that uses the **NLP.js** library (`node-nlp`) to dynamically train Natural Language Processing (NLP) models and process conversational messages through a webhook-based API.
 
-## Technologies
+This API is designed for scalability and performance by utilizing **Worker Threads** for CPU-intensive operations and **Redis** for database query caching.
 
-1. [expressjs](https://expressjs.com) 4.19.2
-2. [typescript](https://www.typescriptlang.org) 5.4.5
-3. [node-nlp](https://github.com/axa-group/nlp.js) 4.27.0
-4. [db-migrate](https://db-migrate.readthedocs.io) 0.11.14
-5. [mysql2](https://github.com/sidorares/node-mysql2) 3.10.3
+Chatbot knowledge base is stored in **MySQL**, allowing administrators to manage intents, entities, training questions, chatbot responses, and supported languages through RESTful APIs and Excel import/export functionality.
 
-## Table of Contents
+This project is suitable for:
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Migration](#migration)
-- [API Endpoints](#api-endpoints)
-- [Doumentation](#documentation)
-- [Template Import](#template-import)
+* Customer Support Chatbots
+* FAQ Automation Systems
+* Internal Knowledge Base Assistants
+* Website Chat Widgets
+* WhatsApp Bot Backends
+* Telegram Bot Backends
+* Conversational AI Applications
 
-## Installation
+---
 
-To get started with the Chatbot API, clone the repository and install the required dependencies in `package.json`:
+## Key Features
+
+- **Dynamic Natural Language Processing (NLP.js)**
+  - Dynamic intent classification and entity extraction.
+  - Automatic language detection using `Language Guesser`.
+  - Random fallback responses when no intent is recognized (`none` intent).
+  - Dynamic entity replacement using the `%entity_name%` placeholder format.
+
+- **Worker Threads (Multi-threading)**
+  - CPU-intensive tasks are executed in separate worker threads to keep the Node.js event loop responsive.
+  - Used for:
+    - NLP model training (`trainNetwork`)
+    - Large Excel file imports (`readExcel`)
+    - Excel export generation (`createExcel`)
+
+- **Redis Query Caching**
+  - Automatic caching of database `SELECT` queries using Redis Hashes.
+  - Generates unique MD5 hashes for SQL queries as cache keys.
+  - Automatic cache invalidation on data modification (`INSERT`, `UPDATE`, `DELETE`).
+  - Can be enabled or disabled through `.env` configuration.
+
+- **Dynamic Swagger UI Documentation**
+  - Automatically generates API documentation from JSON specifications stored in `swagger/` directory.
+  - Accessible through `/docs` route.
+  - Dynamically combines JWT Bearer Token and API Key security schemes.
+
+- **Dual Authentication System**
+  - **JWT Bearer Authentication**, to secure administrative routes:
+    - User Management
+    - FAQ Management
+    - Language Management
+    - Entity Management
+    - Import & Export Operations
+  - **API Key Authentication**, exclusively for client chat webhook route (`POST /webhook/chat`). A unique API key is automatically generated and stored in `key.txt` when the application is started for the first time.
+
+- **Database Migration Management**
+  - Database schema changes are managed using `db-migrate`, ensuring consistent MySQL schema synchronization across environments.
+
+---
+
+## Technology Stack
+
+| Technology         | Version        | Purpose                          |
+| ------------------ | -------------- | -------------------------------- |
+| Node.js            | 18.17.1 / 20.x | Runtime Environment              |
+| TypeScript         | 5.x            | Type-safe JavaScript Development |
+| Express.js         | 4.19.2         | Framework Web/API Routing        |
+| NLP.js (node-nlp)  | 4.27.0         | Natural Language Processing      |
+| db-migrate         | 0.11.14        | Database Migration Tool          |
+| mysql2             | 3.10.3         | MySQL Driver                     |
+| ioredis            | 5.4.1          | Redis Client                     |
+| Joi                | 17.13.3        | Request Validation Schema        |
+| jsonwebtoken       | 9.0.2          | JWT Authentication               |
+| ExcelJS            | 4.4.0          | Excel Import & Export            |
+| swagger-ui-express | 5.0.1          | API Documentation                |
+| Winston            | 3.13.1         | Logging                          |
+
+---
+
+## System Requirements
+
+Before running the application, make sure the following dependencies are installed:
+1. Node.js version `18.17.1` or later
+2. MySQL Server version `8.0` or later
+3. Redis Server (optional, required only when caching is enabled)
+
+---
+
+## Installation & Configuration
+
+### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/dionisius-lg/chatbot-api.git
 cd chatbot-api
 npm install
 ```
 
-## Configuration
+### 2. Configure Environment Variables
 
-Rename or copy `.env.example` to `.env`, then setup the 'datasources' for your application.
+Copy `.env.example` to `.env`:
 
-## Migration
+```bash
+cp .env.example .env
+```
 
-To apply new migration
-```sh
+Configure the environment variables:
+
+```env
+# App Port
+PORT=3000
+
+# DATABASE CONFIG
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=chatbot
+
+# JWT CONFIG
+JWT_KEY=your_jwt_access_secret_key
+JWT_EXPIRE=1h
+JWT_REFRESH_KEY=your_jwt_refresh_secret_key
+JWT_REFRESH_EXPIRE=7d
+JWT_ALGORITHM=HS256
+JWT_LIVE=0
+
+# Redis Cache Config
+CACHE_HOST=localhost
+CACHE_PORT=6379
+CACHE_DB=0
+CACHE_PASSWORD=your_redis_password
+CACHE_DATA_DURATION=3600
+# Aktifkan cache (1 = on, 0 = off)
+CACHE_SERVICE=1
+
+# Directory File
+FILE_DIR=./public/uploads
+
+# Secret Key
+SECRET=your_app_secret
+```
+
+> **Note**
+> When the application starts for the first time, a `key.txt` file will automatically be created in the project root directory if it does not already exist. This file contains a randomly generated 48-character API key used for the `/webhook/chat` endpoint.
+
+---
+
+## Database Migration
+
+Create the database if it does not already exist:
+
+```sql
+CREATE DATABASE IF NOT EXISTS chatbot
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+```
+
+### Run Migrations
+
+```bash
 npx db-migrate up
 ```
 
-To cancel all migration
-```sh
+### Rollback Migrations
+
+```bash
 npx db-migrate down
 ```
 
-## API Endpoints
+The following tables will be created:
+- `users`: Administrator accounts.
+- `refresh_tokens: Valid JWT refresh tokens.
+- `languages`: Supported languages (example: ID, EN).
+- `entities`: NLP entities and synonyms.
+- `faqs`: NLP intents and category mappings.
+- `faq_questions`: NLP training questions.
+- `faq_answers`: Chatbot responses.
 
-### Entities
+---
 
-1. Fetch Entity Data\
-`GET /entities`\
-This endpoint is used to show all data
+## NLP Training Workflow
 
-2. Create New Entity Data\
-`POST /entities`\
-This endpoint is used to create new data
+This chatbot requires training data stored in the database. Training process generates an NLP model file (`model.json`).
 
-3. Fetch Entity by ID\
-`GET /entities/{id}`\
-This endpoint is used to show data by ID
+### Automatic Training via Cron Job
 
-4. Update Entity Data by ID\
-`PUT /entities/{id}`\
-This endpoint is used to update existing data by ID
+The server is configured to automatically retrain the NLP model every day at **00:00 (midnight)**.
 
-5. Import Entity Data\
-`POST /entities/import`\
-This endpoint is used to import data by uploaded file excel
+Configuration can be found in:
 
-### Exports
-
-1. Export Entity Data\
-`GET /exports/entities`\
-This endpoint is used to export data to excel
-
-2. Export FAQ Data\
-`GET /exports/faqs`\
-This endpoint is used to export data to excel
-
-3. Export FAQ Answers Data\
-`GET /exports/faq_answers`\
-This endpoint is used to export data to excel
-
-4. Export FAQ Questions Data\
-`GET /exports/faq_questions`\
-This endpoint is used to export data to excel
-
-5. Export Language Data\
-`GET /exports/languages`\
-This endpoint is used to export data to excel
-
-### FAQs
-
-1. Fetch FAQ Data\
-`GET /faqs`\
-This endpoint is used to show all data
-
-2. Create New FAQ Data\
-`POST /faqs`\
-This endpoint is used to create new data
-
-3. Fetch FAQ by ID\
-`GET /faqs/{id}`\
-This endpoint is used to show data by ID
-
-4. Update FAQ Data by ID\
-`PUT /faqs/{id}`\
-This endpoint is used to update existing data by ID
-
-5. Import FAQ Data\
-`POST /faqs/import`\
-This endpoint is used to import data by uploaded file excel
-
-### FAQ Answers
-
-1. Fetch FAQ Answer Data\
-`GET /faq_answers`\
-This endpoint is used to show all data
-
-2. Create New FAQ Answer Data\
-`POST /faq_answers`\
-This endpoint is used to create new data
-
-3. Fetch FAQ Answer by ID\
-`GET /faq_answers/{id}`\
-This endpoint is used to show data by ID
-
-4. Update FAQ Answer Data by ID\
-`PUT /faq_answers/{id}`\
-This endpoint is used to update existing data by ID
-
-5. Import FAQ Answer Data\
-`POST /faq_answers/import`\
-This endpoint is used to import data by uploaded file excel
-
-### FAQ Questions
-
-1. Fetch FAQ Question Data\
-`GET /faq_questions`\
-This endpoint is used to show all data
-
-2. Create New FAQ Question Data\
-`POST /faq_questions`\
-This endpoint is used to create new data
-
-3. Fetch FAQ Question by ID\
-`GET /faq_questions/{id}`\
-This endpoint is used to show data by ID
-
-4. Update FAQ Question Data by ID\
-`PUT /faq_questions/{id}`\
-This endpoint is used to update existing data by ID
-
-5. Import FAQ Question Data\
-`POST /faq_questions/import`\
-This endpoint is used to import data by uploaded file excel
-
-### Languages
-
-1. Fetch Language Data\
-`GET /languages`\
-This endpoint is used to show all data
-
-2. Fetch Language by ID\
-`GET /languages/{id}`\
-This endpoint is used to show data by ID
-
-### Token
-
-1. Create Token\
-`POST /token`\
-This endpoint is used to generate new token
-
-2. Refresh Token\
-`GET /token/refresh`\
-This endpoint is used to regenerate old token
-
-### Webhook
-
-1. Chat Message\
-`POST /chat`\
-This endpoint is used to post chat message
-
-## Documentation
-
-Swagger Documentation
-```sh
-/docs
+```text
+src/index.ts
 ```
 
-## Template Import
+### Manual Training via API
 
-Template import Entity Data
-```sh
-/public/template-entities.xlsx
+Administrators can trigger model training manually using:
+
+```http
+POST /faqs/train
 ```
 
-Template import FAQ Data
-```sh
-/public/template-faq.xlsx
+---
+
+## Project Structure
+
+```text
+├── migrations/
+│   ├── sqls/
+│   └── ...
+├── public/
+├── src/
+│   ├── config/
+│   ├── controllers/
+│   ├── helpers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── schemas/
+│   └── index.ts
+├── swagger/
+└── database.json
 ```
 
-Template import FAQ Answer Data
-```sh
-/public/template-faq-answers.xlsx
+---
+
+## API Documentation
+
+Interactive API documentation is available after the application starts:
+
+```text
+http://localhost:3000/docs
 ```
 
-Template import FAQ Question Data
-```sh
-/public/template-faq-questions.xlsx
+---
+
+## Authentication Endpoints
+
+| Method | Endpoint         | Authentication | Description                                                      |
+| ------ | ---------------- | -------------- | ---------------------------------------------------------------- |
+| POST   | `/token`         | None           | Authenticate an administrator and obtain Access & Refresh Tokens |
+| GET    | `/token/refresh` | Refresh Token  | Generate a new Access Token                                      |
+
+---
+
+## Chat Webhook
+
+| Method | Endpoint        | Authentication | Description                                                      |
+| ------ | --------------- | -------------- | ---------------------------------------------------------------- |
+| POST   | `/webhook/chat` | API Key        | Process user messages and return NLP-generated chatbot responses |
+
+---
+
+## FAQ Management
+
+| Method | Endpoint       | Description                |
+| ------ | -------------- | -------------------------- |
+| GET    | `/faqs`        | Retrieve FAQ list          |
+| POST   | `/faqs`        | Create FAQ                 |
+| GET    | `/faqs/:id`    | Retrieve FAQ details       |
+| PUT    | `/faqs/:id`    | Update FAQ                 |
+| POST   | `/faqs/import` | Import FAQs from Excel     |
+| POST   | `/faqs/train`  | Trigger NLP model training |
+
+---
+
+## NLP Entity Management
+
+| Method | Endpoint           | Description                |
+| ------ | ------------------ | -------------------------- |
+| GET    | `/entities`        | Retrieve entities          |
+| POST   | `/entities`        | Create entity              |
+| GET    | `/entities/:id`    | Retrieve entity details    |
+| PUT    | `/entities/:id`    | Update entity              |
+| POST   | `/entities/import` | Import entities from Excel |
+
+---
+
+## Data Export
+
+| Method | Endpoint                 |
+| ------ | ------------------------ |
+| GET    | `/exports/entities`      |
+| GET    | `/exports/faqs`          |
+| GET    | `/exports/faq_questions` |
+| GET    | `/exports/faq_answers`   |
+| GET    | `/exports/languages`     |
+| GET    | `/exports/users`         |
+
+---
+
+## Import Templates
+
+The following Excel templates are available in the `/public` directory:
+
+* `template-entities.xlsx`
+* `template-faq.xlsx`
+* `template-faq-answers.xlsx`
+* `template-faq-questions.xlsx`
+
+---
+
+## Running the Application
+
+### Development Mode
+
+Windows:
+
+```bash
+npm run dev-win
 ```
+
+Linux/macOS:
+
+```bash
+npm run dev
+```
+
+### Production Mode
+
+Build the TypeScript source:
+
+```bash
+npm run build
+```
+
+Run the compiled application:
+
+Windows:
+
+```bash
+npm run prod-win
+```
+
+Linux/macOS:
+
+```bash
+npm run prod
+```
+
+---
+
+## License
+
+This project is licensed under the ISC License.
