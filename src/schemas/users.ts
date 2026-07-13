@@ -13,7 +13,7 @@ const schema = {
         username: Joi.string().min(1).max(20),
         password: Joi.string().min(1).max(20),
         fullname: Joi.string().min(1).max(50),
-        is_active: Joi.number().valid(1, 0),
+        is_active: Joi.boolean()
     }),
 };
 

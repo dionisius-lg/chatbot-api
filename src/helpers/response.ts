@@ -1,12 +1,9 @@
-import { Response } from "express";
-import moment from "moment-timezone";
-import * as _ from "lodash";
-import config from "./../config";
-import { isNumeric } from "./value";
+import { Response } from 'express';
+import * as _ from 'lodash';
+import config from './../config';
+import { isNumeric } from './value';
 
 const { timezone } = config;
-
-moment.tz.setDefault(timezone);
 
 interface Result {
     [key: string]: any;

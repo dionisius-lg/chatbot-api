@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS `faq_answers`;
+drop table if exists faq_answers;

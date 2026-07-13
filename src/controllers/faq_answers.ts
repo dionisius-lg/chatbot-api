@@ -1,13 +1,14 @@
-import { Request, Response } from "express";
-import { unlinkSync } from "fs";
-import * as faqAnswersModel from "./../models/faq_answers";
-import * as faqsModel from "./../models/faqs";
-import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
-import { readExcel } from "./../helpers/thread";
-import { filterColumn, filterData } from "./../helpers/request";
-import { isEmpty } from "./../helpers/value";
+import { Request, Response } from 'express';
+import { unlinkSync } from 'fs';
+import * as faqAnswersModel from './../models/faq_answers';
+import * as faqsModel from './../models/faqs';
+import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from './../helpers/response';
+import { readExcel } from './../helpers/thread';
+import { filterColumn, filterData } from './../helpers/request';
+import { isEmpty } from './../helpers/value';
 
 export const getData = async (req: Request, res: Response) => {
+    console.log('--- FAQ_ANSWERS CONTROLLER getData called! ---');
     const { query } = req;
     const result = await faqAnswersModel.getAll(query);
 
@@ -31,7 +32,7 @@ export const getDataById = async (req: Request, res: Response) => {
 
 export const createData = async (req: Request, res: Response) => {
     let { body, decoded } = req;
-    const faq = await faqsModel.getDetail({ is_active: 1, id: body?.faq_id });
+    const faq = await faqsModel.getDetail({ is_active: true, id: body?.faq_id });
 
     if (faq.total_data === 0 || !faq.data) {
         return sendNotFoundData(res, 'FAQ not found');
@@ -52,7 +53,7 @@ export const updateDataById = async (req: Request, res: Response) => {
     let { body, params: { id }, decoded } = req;
 
     if (body?.faq_id) {
-        const faq = await faqsModel.getDetail({ is_active: 1, id: body.faq_id });
+        const faq = await faqsModel.getDetail({ is_active: true, id: body.faq_id });
 
         if (faq.total_data === 0 || !faq.data) {
             return sendNotFoundData(res, 'FAQ not found');
@@ -85,13 +86,14 @@ export const importData = async (req: Request, res: Response) => {
             return sendBadRequest(res, excel.error);
         }
 
-        const faqs = await faqsModel.getAll({ is_active: 1, limit: 0 });
+        const faqs = await faqsModel.getAll({ is_active: true, limit: 0 });
 
         if (faqs.total_data === 0 || !faqs.data) {
             return sendNotFoundData(res, 'FAQ not found');
         }
 
         for (let i in excel.data) {
+
             let { category, intent, locale, ...row } = excel.data[i];
 
             filterColumn(row, allowedKeys);

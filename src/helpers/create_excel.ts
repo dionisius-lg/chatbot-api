@@ -1,9 +1,9 @@
-import { workerData, parentPort } from "worker_threads";
-import exceljs from "exceljs";
-import moment from "moment-timezone";
-import { existsSync, mkdirSync, createWriteStream, statSync } from "fs";
-import config from "./../config";
-import { isEmpty, randomString, excelColumnName } from "./value";
+import { workerData, parentPort } from 'worker_threads';
+import exceljs from 'exceljs';
+import moment from 'moment-timezone';
+import { existsSync, mkdirSync, createWriteStream, statSync } from 'fs';
+import config from './../config';
+import { isEmpty, randomString, excelColumnName } from './value';
 
 const { timezone, file_dir } = config;
 
@@ -40,7 +40,7 @@ const createExcel = async ({ columndata, rowdata, filename, subpath = '' }: Work
     // replace multiple space with one space
     filename = filename.replace( /\s\s+/g, ' ');
     // replace space with underscore
-    filename = filename.replace(/ /g,"_");
+    filename = filename.replace(/ /g, '_');
     // concat with random string and file extension
     filename += `-${randomString(16, true)}.xlsx`;
 
@@ -128,10 +128,8 @@ const createExcel = async ({ columndata, rowdata, filename, subpath = '' }: Work
     };
 };
 
-createExcel(workerData)
-    .then((result: Result) => {
-        parentPort?.postMessage({ success: true, data: result });
-    })
-    .catch((err) => {
-        parentPort?.postMessage({ success: false, error: err.message });
-    });
+createExcel(workerData).then((result: Result) => {
+    parentPort?.postMessage({ success: true, data: result });
+}).catch((err) => {
+    parentPort?.postMessage({ success: false, error: err.message });
+});

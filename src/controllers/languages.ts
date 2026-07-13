@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import * as languagesModel from "./../models/languages";
-import { sendSuccess, sendNotFoundData } from "./../helpers/response";
+import { Request, Response } from 'express';
+import * as languagesModel from './../models/languages';
+import { sendSuccess, sendNotFoundData } from './../helpers/response';
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;

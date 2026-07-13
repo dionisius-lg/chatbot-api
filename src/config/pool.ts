@@ -1,39 +1,58 @@
-import mysql, { PoolOptions, PoolConnection, QueryError, RowDataPacket, ResultSetHeader } from "mysql2";
-import config from ".";
+import path from 'path';
+import pg, { Pool, PoolConfig, QueryResult } from 'pg';
+// @ts-ignore
+import utils from 'pg/lib/utils';
+import config from '.';
+import * as loggerHelper from './../helpers/logger';
 
 const { database } = config;
+const fileSource = '/' + path.relative(process.cwd(), __filename);
 
-const options: PoolOptions = {
+pg.types.setTypeParser(1082, (val) => val); // DATE
+pg.types.setTypeParser(1114, (val) => val); // TIMESTAMP
+pg.types.setTypeParser(1184, (val) => val); // TIMESTAMPTZ
+
+const options: PoolConfig = {
     host: database.host,
     port: database.port,
     user: database.username,
     password: database.password,
     database: database.name,
-    connectionLimit: 50,
-    charset: 'UTF8MB4_GENERAL_CI',
-    // Allow multiple mysql statements per query
-    multipleStatements: true,
-    // Force date types (TIMESTAMP, DATETIME, DATE) to be returned as strings rather then inflated into JavaScript Date objects
-    dateStrings: true
+    max: 50,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000
 };
 
-const pool = mysql.createPool(options);
-const escape = mysql.escape;
+const pool = new Pool(options);
+const escape = (val: any) => utils.escapeLiteral(String(val));
 
-pool.getConnection((err: NodeJS.ErrnoException | null, conn: PoolConnection) => {
+pool.connect((err, client, release) => {
     if (err) {
-        console.error(err);
+        loggerHelper.error({
+            source: fileSource,
+            message: 'Connection error',
+            error: err
+        });
         return;
     }
 
-    console.log(`[pool] is connected. Thread ID: ${conn.threadId}`);
+    console.log(`[pool] connected to database ${database.name}`);
+    release();
+});
+
+pool.on('error', (err) => {
+    loggerHelper.error({
+        source: fileSource,
+        message: 'Unexpected error on idle',
+        error: err
+    });
 });
 
 export {
     escape,
-    QueryError,
-    RowDataPacket,
-    ResultSetHeader
+    QueryResult
 };
 
 export default pool;

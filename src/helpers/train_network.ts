@@ -1,13 +1,14 @@
-import { parentPort } from "worker_threads";
+import path from 'path';
+import { parentPort } from 'worker_threads';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { NlpManager } from "node-nlp";
-import * as entitiesModel from "./../models/entities";
-import * as faqAnswersModel from "./../models/faq_answers";
-import * as faqsModel from "./../models/faqs";
-import * as faqQuestionsModel from "./../models/faq_questions";
-import * as logger from "./logger";
-import { putContent } from "./file";
+import { NlpManager } from 'node-nlp';
+import * as entitiesModel from './../models/entities';
+import * as faqAnswersModel from './../models/faq_answers';
+import * as faqsModel from './../models/faqs';
+import * as faqQuestionsModel from './../models/faq_questions';
+import * as loggerHelper from './logger';
+import { putContent } from './file';
 
 interface Result {
     faqs: number;
@@ -15,6 +16,8 @@ interface Result {
     faq_answers: number;
     entities: number;
 }
+
+const fileSource = '/' + path.relative(process.cwd(), __filename);
 
 const trainNetwork = async (): Promise<Result> => {
     let result: Result = { faqs: 0, faq_questions: 0, faq_answers: 0, entities: 0 };
@@ -70,25 +73,30 @@ const trainNetwork = async (): Promise<Result> => {
             await manager.train();
             manager.save('model.json');
 
-            logger.success({
-                from: 'train network',
-                message: `Train: ${result.faqs} FAQ, ${result.faq_questions} FAQ Question, ${result.faq_answers} FAQ Answer, ${result.entities} Entity`
+            loggerHelper.event({
+                source: fileSource,
+                message: 'Trained model',
+                data: {
+                    faqs: result.faqs,
+                    faqQuestions: result.faq_questions,
+                    faqAnswers: result.faq_answers,
+                    entities: result.entities
+                } 
             });
         }
     } catch (err: any) {
-        logger.error({
-            from: 'train network',
-            message: `Failed to train network. ${err?.message}`
+        loggerHelper.error({
+            source: fileSource,
+            message: 'Failed to train',
+            error: err
         });
     }
 
     return result;
 };
 
-trainNetwork()
-    .then((result: Result) => {
-        parentPort?.postMessage({ success: true, data: result });
-    })
-    .catch((err) => {
-        parentPort?.postMessage({ success: false, error: err.message });
-    });
+trainNetwork().then((result: Result) => {
+    parentPort?.postMessage({ success: true, data: result });
+}).catch((err) => {
+    parentPort?.postMessage({ success: false, error: err.message });
+});

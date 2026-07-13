@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS `refresh_tokens`;
+drop table if exists refresh_tokens;

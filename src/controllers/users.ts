@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import * as usersModel from "./../models/users";
-import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
-import { isEmpty } from "./../helpers/value";
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import * as usersModel from './../models/users';
+import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from './../helpers/response';
+import { isEmpty } from './../helpers/value';
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;

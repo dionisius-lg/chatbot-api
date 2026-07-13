@@ -1,13 +1,14 @@
-CREATE TABLE IF NOT EXISTS `refresh_tokens` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) DEFAULT NULL,
-  `user_agent` varchar(255) DEFAULT NULL,
-  `ip_address` varchar(20) DEFAULT NULL,
-  `token` text DEFAULT NULL,
-  `expired_at` datetime DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_user_id` (`user_id`),
-  CONSTRAINT `fk_refresh_tokens_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE SET NULL ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create table if not exists refresh_tokens (
+	id serial not null primary key,
+    user_id int null,
+    user_agent varchar null,
+    ip_address varchar null,
+    token text null,
+    expired_at timestamp null,
+    created_at timestamp default current_timestamp,
+    updated_at timestamp null,
+    constraint fk_refresh_tokens_user_id foreign key (user_id) references users(id) on delete set null on update set null
+);
+
+create unique index if not exists idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+create index if not exists idx_refresh_tokens_created_at on refresh_tokens (created_at);

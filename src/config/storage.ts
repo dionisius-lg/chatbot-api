@@ -1,8 +1,8 @@
-import { Request } from "express";
-import multer from "multer";
-import { existsSync, mkdirSync } from "fs";
-import config from ".";
-import { isEmpty, randomString } from "./../helpers/value";
+import { Request } from 'express';
+import multer from 'multer';
+import { existsSync, mkdirSync } from 'fs';
+import config from '.';
+import { isEmpty, randomString } from './../helpers/value';
 
 const { file_dir } = config;
 

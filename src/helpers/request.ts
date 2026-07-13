@@ -17,7 +17,7 @@ export const filterColumn = (object: Record<string, any> = {}, keys: string[] = 
  */
 export const filterData = (object: Record<string, any> = {}) => {
     Object.keys(object).forEach((key) => {
-        if (object[key] === undefined || object[key] === false) {
+        if (object[key] === undefined) {
             delete object[key];
         }
 

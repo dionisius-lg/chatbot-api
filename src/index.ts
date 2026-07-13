@@ -4,7 +4,7 @@ import cron from "node-cron";
 import config from "./config";
 import router from "./routes";
 import setupSwagger from "./middleware/setup_swagger";
-import * as logger from "./helpers/logger";
+import * as loggerHelper from "./helpers/logger";
 import { sendBadRequest } from "./helpers/response";
 import { trainNetwork } from "./helpers/thread";
 
@@ -20,7 +20,7 @@ app.use('/public', express.static('public', { index: false }));
 // setup swagger
 app.use('/docs', swagger.serve, setupSwagger);
 // log all access
-logger.access(app);
+loggerHelper.access(app);
 // override error syntax
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     if (err instanceof SyntaxError) {

@@ -2,7 +2,7 @@
     "defaultEnv": "dev",
     "sql-file" : true,
     "dev": {
-      "driver": "mysql",
+      "driver": "pg",
       "host": {"ENV": "DB_HOST"},
       "port": {"ENV": "DB_PORT"},
       "user": {"ENV": "DB_USER"},

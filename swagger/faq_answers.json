@@ -99,7 +99,7 @@
                     "default": ""
                   }
                 },
-                "required": ["answer", "language_id"]
+                "required": ["answer", "faq_id"]
               }
             }
           }

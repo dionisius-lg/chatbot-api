@@ -11,7 +11,7 @@ const schema = {
     updateData: Joi.object().keys({
         question: Joi.string().min(1).max(255),
         faq_id: Joi.number().min(1),
-        is_active: Joi.number().valid(1, 0),
+        is_active: Joi.boolean(),
     }),
 };
 

@@ -1,11 +1,11 @@
-import { Request, Response } from "express";
-import { unlinkSync } from "fs";
-import * as entitiesModel from "./../models/entities";
-import * as languagesModel from "./../models/languages";
-import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from "./../helpers/response";
-import { readExcel, trainNetwork } from "./../helpers/thread";
-import { filterColumn, filterData } from "./../helpers/request";
-import { isEmpty } from "./../helpers/value";
+import { Request, Response } from 'express';
+import { unlinkSync } from 'fs';
+import * as entitiesModel from './../models/entities';
+import * as languagesModel from './../models/languages';
+import { sendSuccess, sendSuccessCreated, sendBadRequest, sendNotFoundData } from './../helpers/response';
+import { readExcel, trainNetwork } from './../helpers/thread';
+import { filterColumn, filterData } from './../helpers/request';
+import { isEmpty } from './../helpers/value';
 
 export const getData = async (req: Request, res: Response) => {
     const { query } = req;
@@ -34,7 +34,7 @@ export const getDataById = async (req: Request, res: Response) => {
 
 export const createData = async (req: Request, res: Response) => {
     let { body, decoded } = req;
-    const language = await languagesModel.getDetail({ id: body?.language_id, is_active: 1 });
+    const language = await languagesModel.getDetail({ id: body?.language_id, is_active: true });
 
     if (language.total_data === 0 || !language.data) {
         return sendNotFoundData(res, 'Language not found');
@@ -80,7 +80,7 @@ export const updateDataById = async (req: Request, res: Response) => {
     let sources: string[] = body?.intent && [body.intent] || [data.intent];
 
     if (body?.language_id) {
-        const language = await languagesModel.getDetail({ id: body?.language_id, is_active: 1 });
+        const language = await languagesModel.getDetail({ id: body?.language_id, is_active: true });
 
         if (language.total_data === 0 || !language.data) {
             return sendNotFoundData(res, 'Language not found');
@@ -128,7 +128,7 @@ export const importData = async (req: Request, res: Response) => {
             return sendBadRequest(res, excel.error);
         }
 
-        const languages = await languagesModel.getAll({ is_active: 1, limit: 0 });
+        const languages = await languagesModel.getAll({ is_active: true, limit: 0 });
 
         if (languages.total_data === 0 || !languages.data) {
             return sendNotFoundData(res, 'Languages not found');
@@ -151,7 +151,7 @@ export const importData = async (req: Request, res: Response) => {
             }
 
             let languageData = languages.data.find((obj: Record<string, any>) =>
-                obj.locale.toLowerCase() === locale.toLowerCase() && obj.is_active === 1
+                obj.locale.toLowerCase() === locale.toLowerCase() && obj.is_active === true
             );
 
             if (!languageData) {

@@ -1,15 +1,15 @@
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(20) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  `fullname` varchar(100) DEFAULT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `created_by` int(11) DEFAULT 1,
-  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
-  `updated_by` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `idx_username` (`username`),
-  INDEX `idx_is_active` (`is_active`),
-  INDEX `idx_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create table if not exists users (
+	id serial not null primary key,
+	username varchar(20) not null,
+	password varchar(255) not null,
+	fullname varchar(100) null,
+	is_active boolean not null default true,
+	created_at timestamp default current_timestamp,
+	created_by int default 1,
+	updated_at timestamp default null,
+	updated_by int default 1
+);
+
+create unique index if not exists idx_username on users (username);
+create index if not exists idx_users_created_at on users (created_at);
+create index if not exists idx_users_created_by on users (created_by);

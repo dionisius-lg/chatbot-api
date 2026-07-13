@@ -1,7 +1,7 @@
-import moment from "moment-timezone";
-import config from "./../config";
-import * as dbQuery from "./../helpers/db_query";
-import { isEmpty, isNumeric } from "./../helpers/value";
+import moment from 'moment-timezone';
+import config from './../config';
+import * as dbQuery from './../helpers/db_query';
+import { isEmpty, isNumeric } from './../helpers/value';
 
 const { timezone } = config;
 const table = 'faq_questions';
@@ -41,8 +41,8 @@ export const getAll = async (conditions: Conditions) => {
         `languages.name AS language`,
         `languages.native_name AS language_native`,
         `languages.locale AS locale`,
-        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
-        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
+        `COALESCE(created_users.fullname, created_users.username) AS created_user`,
+        `COALESCE(updated_users.fullname, updated_users.username) AS updated_user`,
     ];
 
     let join: string[] = [
@@ -63,7 +63,7 @@ export const getAll = async (conditions: Conditions) => {
 
     const groupBy = [`${table}.id`];
 
-    return await dbQuery.getAll({ table, conditions, conditionTypes, customConditions, customColumns, join, groupBy });
+    return await dbQuery.getAll({ table, conditions, conditionTypes, customConditions, customColumns, join });
 };
 
 export const getDetail = async (conditions: Conditions) => {
@@ -72,8 +72,8 @@ export const getDetail = async (conditions: Conditions) => {
         `languages.name AS language`,
         `languages.native_name AS language_native`,
         `languages.locale AS locale`,
-        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
-        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
+        `COALESCE(created_users.fullname, created_users.username) AS created_user`,
+        `COALESCE(updated_users.fullname, updated_users.username) AS updated_user`,
     ];
 
     const join: string[] = [

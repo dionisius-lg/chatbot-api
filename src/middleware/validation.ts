@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import * as response from "./../helpers/response";
+import { Request, Response, NextFunction } from 'express';
+import * as response from './../helpers/response';
 
 const validation = (schema: any, property: string) => {
     return (req: Request, res: Response, next: NextFunction) => {

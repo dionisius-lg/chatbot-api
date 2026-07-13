@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 import jwt, { Secret, Algorithm, VerifyOptions, VerifyErrors, Jwt, JwtPayload } from 'jsonwebtoken';
-import config from "./../config";
-import { getContent } from "./../helpers/file";
-import * as responseHelper from "./../helpers/response";
+import config from './../config';
+import { getContent } from './../helpers/file';
+import * as responseHelper from './../helpers/response';
 
 interface Decoded {
     user_id: number;

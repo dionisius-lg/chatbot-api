@@ -1,49 +1,91 @@
-import redis, { Redis, RedisOptions } from "ioredis";
-import { isEmpty } from "./../helpers/value";
-import config from ".";
+import path from 'path';
+import { createClient, RedisClientOptions } from 'redis';
+import config from './index';
+import * as loggerHelper from './../helpers/logger';
+import * as valueHelper from './../helpers/value';
 
-const { cache: { host, port, password, db, duration, service } } = config;
-const options: RedisOptions = { host, port, db, enableOfflineQueue: true };
-const channel: string = `__keyevent@${db}__:expired`;
+export let connected: boolean = false;
 
-if (!isEmpty(password)) {
-    options.password = password;
-}
+const fileSource = '/' + path.relative(process.cwd(), __filename);
 
-let subscriber: Redis | false = false;
-let client: Redis | any = false;
-let connected: boolean = false;
+const options: RedisClientOptions = {
+    socket: {
+        host: config.cache.host,
+        port: config.cache.port,
+        connectTimeout: 5000,
+        keepAlive: true,
+        reconnectStrategy: (attempt: number): number => {
+            if (attempt > 1000) {
+                loggerHelper.error({
+                    source: fileSource,
+                    message: 'Cache reconnecting too long'
+                });
+            }
 
-if (service.toString() === '1') {
-    subscriber = new redis(options);
-    client = new redis(options);
-
-    subscriber.subscribe(channel);
-
-    client.on('ready', () => {
-        console.log(`[cache] is ready`);
-        client?.config('SET', 'notify-keyspace-events', 'Ex');
-    });
-
-    client.on('connect', () => {
-        console.log(`[cache] is connected`);
-        connected = true;
-    });
-
-    client.on('error', (err: Error) => {
-        console.error(`[cache] error: ${err?.message}`);
-        connected = false;
-    });
-
-    client.on('reconnecting', () => {
-        console.log(`[cache] reconnecting...`);
-        connected = false;
-    });
-}
-
-export default {
-    connected,
-    client,
-    channel,
-    duration
+            return Math.min(attempt * 50, 500);
+        }
+    },
+    database: config.cache.db,
+    disableOfflineQueue: false
 };
+
+if (!valueHelper.isEmpty(config.cache.password)) {
+    options.password = config.cache.password;
+}
+
+export const client = createClient(options);
+export const subscriber = createClient(options);
+
+client.on('connect', () => {
+    connected = true;
+    console.log(`[cache] connected`);
+});
+
+client.on('ready', () => {
+    connected = true;
+    console.log(`[cache] ready to use`);
+});
+
+client.on('reconnecting', () => {
+    connected = false;
+    console.log(`[cache] reconnecting...`);
+});
+
+client.on('error', (err: Error) => {
+    connected = false;
+    loggerHelper.error({
+        source: fileSource,
+        message: `Cache error! ${err?.message}`,
+        error: err
+    });
+});
+
+// --- Init Connection & Pub/Sub ---
+const initConnection = async (): Promise<void> => {
+    try {
+        await client.connect();
+        await subscriber.connect();
+
+        const channel: string = `__keyevent@${config.cache.db}__:expired`;
+
+        await subscriber.subscribe(channel, (message: string, channelName: string) => {
+            loggerHelper.event({
+                source: fileSource,
+                message: `Received subscribe event`,
+                data: { channel: channelName, message }
+            });
+        });
+    } catch (err: any) {
+        loggerHelper.error({
+            source: fileSource,
+            message: `Could not establish connection`,
+            error: err
+        });
+    }
+};
+
+if (config.cache.service === 1) {
+    initConnection();
+}
+
+export const expire: number = config.cache.duration;

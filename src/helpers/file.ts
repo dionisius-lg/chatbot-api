@@ -1,6 +1,6 @@
-import { Request } from "express";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { isEmpty } from "./value";
+import { Request } from 'express';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { isEmpty } from './value';
 
 export const mimeFilter = (mimetypes: string[]) => {
     return (req: Request, file: Express.Multer.File, callback: Function) => {

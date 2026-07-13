@@ -36,8 +36,8 @@
             "name": "is_active",
             "schema": {
               "nullable": true,
-              "type": "integer",
-              "enum": ["0", "1"]
+              "type": "boolean",
+              "enum": [true, false]
             }
           },
           {
@@ -175,9 +175,9 @@
                     "default": ""
                   },
                   "is_active": {
-                    "type": "integer",
+                    "type": "boolean",
                     "default": "",
-                    "enum": ["0", "1"]
+                    "enum": [true, false]
                   }
                 }
               }

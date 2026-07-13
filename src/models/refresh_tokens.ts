@@ -1,6 +1,6 @@
-import moment from "moment-timezone";
-import config from "./../config";
-import * as dbQuery from "./../helpers/db_query";
+import moment from 'moment-timezone';
+import config from './../config';
+import * as dbQuery from './../helpers/db_query';
 
 const { timezone } = config;
 const table = 'refresh_tokens';

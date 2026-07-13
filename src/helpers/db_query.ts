@@ -1,10 +1,10 @@
-import moment, { Moment } from "moment-timezone";
-import * as _ from "lodash";
-import config from "./../config";
-import pool, { escape, QueryError, RowDataPacket, ResultSetHeader } from "./../config/pool";
-import { getDataQuery, setDataQuery, deleteDataQuery } from "./chache";
-import { filterColumn, filterData } from "./request";
-import { isEmpty, isNumeric } from "./value";
+import moment, { Moment } from 'moment-timezone';
+import * as _ from 'lodash';
+import config from './../config';
+import pool, { escape, QueryResult } from './../config/pool';
+import { getDataQuery, setDataQuery, deleteDataQuery } from './cache';
+import { filterColumn, filterData } from './request';
+import { isEmpty, isNumeric } from './value';
 
 const { timezone, database, cache } = config;
 
@@ -38,19 +38,20 @@ export const checkColumn = ({
     table
 }: CheckColumnOptions): Promise<string[]> => {
     return new Promise((resolve) => {
-        const query: string = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${database.name}' AND TABLE_NAME = '${table}'`;
+        const query: string = `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}'`;
 
-        pool.query(query, (err: QueryError | null, result?: RowDataPacket[] | undefined) => {
+        pool.query(query, (err: Error | null, result?: QueryResult) => {
             if (err) {
                 console.error(err);
                 return resolve([]);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || isEmpty(result.rows)) {
                 return resolve([]);
             }
 
-            const columns: string[] = result.map((row) => row.COLUMN_NAME);
+            // PostgreSQL mengembalikan lower-case 'column_name'
+            const columns: string[] = result.rows.map((row) => row.column_name);
 
             return resolve(columns);
         });
@@ -78,7 +79,6 @@ export const countData = ({
 }: CountDataOptions) => {
     return new Promise<number>((resolve) => {
         let setCond: string[] = [];
-        let setCustomCond: string[] = [];
         let queryCond: string = '';
         let query: string = `SELECT COUNT(*) AS count FROM ${table}`;
         let queryCount: string = '';
@@ -94,7 +94,7 @@ export const countData = ({
                     switch (true) {
                         case (conditionTypes.date && (conditionTypes.date).includes(k)):
                             let dateVal: Moment = _.toNumber(conditions[k]) > 0 ? moment(_.toNumber(conditions[k]) * 1000) : moment(new Date());
-                            setCond.push(`DATE(${table}.${k}) = ${escape(dateVal.format('YYYY-MM-DD'))}`);
+                            setCond.push(`(${table}.${k})::date = ${escape(dateVal.format('YYYY-MM-DD'))}`);
                             break;
                         case (conditionTypes.like && (conditionTypes.like).includes(k)):
                             let likeVal = `%${conditions[k]}%`;
@@ -117,7 +117,6 @@ export const countData = ({
                 }
             });
 
-
             queryCond = setCond.join(' AND ');
             query += ` WHERE ${queryCond}`;
         }
@@ -125,7 +124,7 @@ export const countData = ({
         if (customConditions && !isEmpty(customConditions) && _.isArrayLikeObject(customConditions)) {
             queryCond = ` WHERE ` + customConditions.join(' AND ');
 
-            if ((conditions && !isEmpty(conditions)) || (setCustomCond && !isEmpty(setCustomCond))) {
+            if ((conditions && !isEmpty(conditions))) {
                 queryCond = ` AND ` + customConditions.join(' AND ');
             }
 
@@ -141,22 +140,22 @@ export const countData = ({
                 query += ` HAVING ${havingClause}`;
             }
 
-            queryCount = `SELECT COUNT(*) AS count FROM (${query}) AS count`;
+            queryCount = `SELECT COUNT(*) FROM (${query}) AS count`;
             query = queryCount;
         }
 
-        pool.query(query, (err: QueryError | null, result?: RowDataPacket[] | undefined) => {
+        pool.query(query, (err: Error | null, result?: QueryResult) => {
             if (err) {
                 console.error(err);
                 return resolve(0);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || isEmpty(result.rows)) {
                 return resolve(0);
             }
 
-            const { count } = result[0];
-            
+            const count = Number(result.rows[0].count);
+
             return resolve(count || 0);
         });
     });
@@ -203,7 +202,7 @@ export const getAll = ({
         const sortData: string[] = ['ASC', 'DESC'];
 
         let order: boolean | string = conditions && conditions?.order || columns[0];
-            order = typeof order === 'string' && columns.includes(order) ? order : columns[0];
+        order = typeof order === 'string' && columns.includes(order) ? order : columns[0];
 
         if (typeof conditions?.order === 'boolean' && conditions?.order === false) {
             order = false;
@@ -233,8 +232,7 @@ export const getAll = ({
 
         if (columnDeselect && !isEmpty(columnDeselect) && _.isArrayLikeObject(columnDeselect)) {
             if (columnDeselect.includes('*')) {
-                // filter data, exclude all columns
-                // let selectedColumn = _.difference(columns, deselectedColumn)
+                // exclude all columns
                 columns = [];
             } else {
                 // filter data, get column to exclude from valid selected columns or table columns
@@ -247,10 +245,7 @@ export const getAll = ({
 
         if (join && !isEmpty(join) && _.isArrayLikeObject(join)) {
             // give prefix table to table columns
-            let prefixColumn = columns.map((col: string) => {
-                return `${table}.${col}`;
-            });
-
+            let prefixColumn = columns.map((col: string) => `${table}.${col}`);
             columns = prefixColumn;
         }
 
@@ -280,7 +275,7 @@ export const getAll = ({
                     switch (true) {
                         case (conditionTypes.date && (conditionTypes.date).includes(k)):
                             let dateVal: Moment = _.toNumber(conditions[k]) > 0 ? moment(_.toNumber(conditions[k]) * 1000) : moment(new Date());
-                            setCond.push(`DATE(${table}.${k}) = ${escape(dateVal.format('YYYY-MM-DD'))}`);
+                            setCond.push(`(${table}.${k})::date = ${escape(dateVal.format('YYYY-MM-DD'))}`);
                             break;
                         case (conditionTypes.like && (conditionTypes.like).includes(k)):
                             let likeVal = `%${conditions[k]}%`;
@@ -363,31 +358,30 @@ export const getAll = ({
 
         if (cache.service === 1) {
             const key: string = cacheKey || `${table}:all`;
-            const getCache = await getDataQuery({ key, field: query });
+            const getCache = await getDataQuery(key, query);
 
             if (getCache) {
-                // get data from cache
                 return resolve(getCache);
             }
         }
 
-        pool.query(query, (err: QueryError | null, result?: RowDataPacket[] | undefined) => {
+        pool.query(query, (err: Error | null, result?: QueryResult) => {
             if (err) {
                 console.error(err);
                 return resolve(resultData);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || isEmpty(result.rows)) {
                 return resolve(resultData);
             }
 
             resultData.total_data = count;
-            resultData.data = result;
+            resultData.data = result.rows;
             resultData.limit = limit;
             resultData.page = page;
 
             if (cache.service === 1) {
-                setDataQuery({ key: `${table}:all`, field: query, value: resultData });
+                setDataQuery(`${table}:all`, query, resultData);
             }
 
             return resolve(resultData);
@@ -432,7 +426,7 @@ export const getDetail = ({
 
         let column: string = '';
         let setCond: string[] = [];
-        let queryCond:  string = '';
+        let queryCond: string = '';
 
         if (columnSelect && !isEmpty(columnSelect) && _.isArrayLikeObject(columnSelect)) {
             // filter data from all table columns, only keep selected columns
@@ -442,8 +436,7 @@ export const getDetail = ({
 
         if (columnDeselect && !isEmpty(columnDeselect) && _.isArrayLikeObject(columnDeselect)) {
             if (columnDeselect.includes('*')) {
-                // filter data, exclude all columns
-                // let selectedColumn = _.difference(columns, deselectedColumn)
+                // exclude all columns
                 columns = [];
             } else {
                 // filter data, get column to exclude from valid selected columns or table columns
@@ -456,22 +449,11 @@ export const getDetail = ({
 
         if (join && !isEmpty(join) && _.isArrayLikeObject(join)) {
             // give prefix table to table columns
-            let prefixColumn = columns.map((col: string) => {
-                return `${table}.${col}`;
-            });
-
+            let prefixColumn = columns.map((col: string) => `${table}.${col}`);
             columns = prefixColumn;
         }
 
         column = columns.join(', ');
-
-        if (customColumns && !isEmpty(customColumns) && _.isArrayLikeObject(customColumns)) {
-            if (isEmpty(columns)) {
-                column += customColumns.join(', ');
-            } else {
-                column += ', ' + customColumns.join(', ');
-            }
-        }
 
         if (customColumns && !isEmpty(customColumns) && _.isArrayLikeObject(customColumns)) {
             let append: string = '';
@@ -483,7 +465,7 @@ export const getDetail = ({
             column += append + customColumns.join(', ');
         }
 
-        let query: string = `SELECT ${column}`
+        let query: string = `SELECT ${column}`;
 
         if (typeof table === 'string' && !isEmpty(table)) {
             query += ` FROM ${table}`;
@@ -530,35 +512,33 @@ export const getDetail = ({
             if (cache.service === 1) {
                 const key: string = cacheKey || table;
                 const keyId: string = conditions && conditions?.id || '';
-                const getCache = await getDataQuery({ key: `${key}${keyId}`, field: query });
-    
+                const getCache = await getDataQuery(`${key}${keyId}`, query);
+
                 if (getCache) {
-                    // get data from cache
                     return resolve(getCache);
                 }
             }
         }
 
-        
-        pool.query(query, (err: QueryError | null, result?: RowDataPacket[] | undefined) => {
+        pool.query(query, (err: Error | null, result?: QueryResult) => {
             if (err) {
                 console.error(err);
                 return resolve(resultData);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || isEmpty(result.rows)) {
                 return resolve(resultData);
             }
 
             resultData.total_data = 1;
-            resultData.data = result[0];
+            resultData.data = result.rows[0];
             resultData.limit = 1;
             resultData.page = 0;
 
             if (typeof table === 'string' && !isEmpty(table) && cache.service === 1) {
                 const key: string = cacheKey || table;
                 const keyId: string = conditions && conditions?.id || '';
-                setDataQuery({ key: `${key}${keyId}`, field: query, value: resultData });
+                setDataQuery(`${key}${keyId}`, query, resultData);
             }
 
             return resolve(resultData);
@@ -596,7 +576,6 @@ export const insertData = ({
         filterData(data);
 
         let keys: string[] = Object.keys(data);
-
         // check protected columns on submitted data
         let forbiddenColumns: string[] = _.intersection(protectedColumns, keys);
 
@@ -606,23 +585,25 @@ export const insertData = ({
 
         let column: string = keys.join(', ');
 
-        let query: string = `INSERT INTO ${table} (${column}) VALUES ?`;
-        let values: (string | number | null)[][] = [];
+        // Prepare parameterized query ($1, $2, etc)
+        let placeholders = keys.map((_, index) => `$${index + 1}`).join(', ');
+        // return id added so pg return new inserted ID
+        let query: string = `INSERT INTO ${table} (${column}) VALUES (${placeholders}) RETURNING id`; 
 
-        let tempVal = Object.keys(data).map(k => {
-            let dataVal: string | number | null = null;
+        let values = keys.map(k => {
+            let dataVal: any = null;
 
-            if (typeof data[k] !== "undefined") {
+            if (typeof data[k] !== 'undefined') {
                 dataVal = data[k];
 
                 if (typeof dataVal === 'string') {
                     dataVal = dataVal.trim();
 
-                    if (typeof dataVal === 'string' && timeChar.includes(dataVal.toUpperCase())) {
+                    if (timeChar.includes(dataVal.toUpperCase())) {
                         dataVal = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
                     }
-        
-                    if (typeof dataVal === 'string' && nullChar.includes(dataVal.toUpperCase())) {
+
+                    if (nullChar.includes(dataVal.toUpperCase())) {
                         dataVal = null;
                     }
                 }
@@ -631,34 +612,29 @@ export const insertData = ({
             return dataVal;
         });
 
-        values.push(tempVal);
-
-        pool.query(query, [values], (err: QueryError | null, result: ResultSetHeader): any => {
+        pool.query(query, values, (err: Error | null, result: QueryResult): any => {
             if (err) {
                 console.error(err);
                 return resolve(resultData);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || result.rowCount === null) {
                 return resolve(resultData);
             }
 
             if (cache.service === 1) {
                 const keyData = `${table}:all`;
 
-                switch (true) {
-                    case (cacheKeys && !isEmpty(cacheKeys)):
-                        cacheKeys.push(keyData);
-                        deleteDataQuery({ key: cacheKeys });
-                        break;
-                    default:
-                        deleteDataQuery({ key: [keyData] });
-                        break;
+                if (cacheKeys && !isEmpty(cacheKeys)) {
+                    cacheKeys.push(keyData);
+                    deleteDataQuery(cacheKeys);
+                } else {
+                    deleteDataQuery([keyData]);
                 }
             }
 
-            resultData.total_data = result.affectedRows;
-            resultData.data = { id: result.insertId };
+            resultData.total_data = result.rowCount;
+            resultData.data = { id: result.rows[0]?.id || null };
 
             return resolve(resultData);
         });
@@ -684,7 +660,7 @@ export const insertManyData = ({
             data: false
         };
 
-        let timeChar: string[] = ['CURRENT_TIMESTAMP()', 'NOW()'];
+        let timeChar: string[] = ['CURRENT_TIMESTAMP()', 'NOW()', 'CURRENT_TIMESTAMP'];
         let nullChar: string[] = ['NULL'];
 
         if (isEmpty(data) || data.length === 0) {
@@ -706,7 +682,6 @@ export const insertManyData = ({
 
         const keys: string[] = Object.keys(data[0]);
 
-        // if key data empty
         if (isEmpty(keys)) {
             return resolve(resultData);
         }
@@ -720,66 +695,67 @@ export const insertManyData = ({
 
         const column: string = keys.join(', ');
 
-        let query: string = `INSERT INTO ${table} (${column}) VALUES ?`;
-        let values: (string | number | null)[][] = [];
-        let tempVal: (string | number | null)[] = [];
+        let values: any[] = [];
+        let valueLines: string[] = [];
+        let paramIndex = 1;
 
-        for (let i in data) {
+        for (let i = 0; i < data.length; i++) {
             // if index and 'data order' on each object not the same
             if (!_.isEqual(keys, Object.keys(data[i]))) {
                 return resolve(resultData);
             }
 
-            tempVal = Object.keys(data[i]).map(k => {
+            let linePlaceholders: string[] = [];
+
+            keys.forEach(k => {
                 let dataVal: string | number | null = null;
 
-                if (typeof data[i][k] !== "undefined") {
+                if (typeof data[i][k] !== 'undefined') {
                     dataVal = data[i][k];
 
                     if (typeof dataVal === 'string') {
                         dataVal = dataVal.trim();
 
-                        if (typeof dataVal === 'string' && timeChar.includes(dataVal.toUpperCase())) {
+                        if (timeChar.includes(dataVal.toUpperCase())) {
                             dataVal = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
                         }
-
-                        if (typeof dataVal === 'string' && nullChar.includes(dataVal.toUpperCase())) {
+                        if (nullChar.includes(dataVal.toUpperCase())) {
                             dataVal = null;
                         }
                     }
                 }
 
-                return dataVal;
+                values.push(dataVal);
+                linePlaceholders.push(`$${paramIndex++}`);
             });
 
-            values.push(tempVal);
+            valueLines.push(`(${linePlaceholders.join(', ')})`);
         }
 
-        pool.query(query, [values], (err: QueryError | null, result: ResultSetHeader): any => {
+        let query: string = `INSERT INTO ${table} (${column}) VALUES ${valueLines.join(', ')}`;
+
+        pool.query(query, values, (err: Error | null, result: QueryResult): any => {
             if (err) {
                 console.error(err);
                 return resolve(resultData);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || result.rowCount === null) {
                 return resolve(resultData);
             }
 
             if (cache.service === 1) {
                 const keyData = `${table}:all`;
 
-                switch (true) {
-                    case (cacheKeys && !isEmpty(cacheKeys)):
-                        cacheKeys.push(keyData);
-                        deleteDataQuery({ key: cacheKeys });
-                        break;
-                    default:
-                        deleteDataQuery({ key: [keyData] });
-                        break;
+                if (cacheKeys && !isEmpty(cacheKeys)) {
+                    cacheKeys.push(keyData);
+                    deleteDataQuery(cacheKeys);
+                } else {
+                    deleteDataQuery([keyData]);
                 }
             }
 
-            resultData.total_data = result.affectedRows;
+            resultData.total_data = result.rowCount;
             resultData.data = data;
 
             return resolve(resultData);
@@ -791,6 +767,7 @@ interface InsertDuplicateUpdateDataOptions {
     table: string;
     data: Record<string, any>[];
     protectedColumns?: string[];
+    conflictedColumns?: string;
     cacheKeys?: string[];
 }
 
@@ -798,6 +775,7 @@ export const insertDuplicateUpdateData = ({
     table,
     data,
     protectedColumns,
+    conflictedColumns,
     cacheKeys
 }: InsertDuplicateUpdateDataOptions): Promise<ResultDataArray> => {
     return new Promise(async (resolve) => {
@@ -806,7 +784,7 @@ export const insertDuplicateUpdateData = ({
             data: false
         };
 
-        let timeChar: string[] = ['CURRENT_TIMESTAMP()', 'NOW()'];
+        let timeChar: string[] = ['CURRENT_TIMESTAMP()', 'NOW()', 'CURRENT_TIMESTAMP'];
         let nullChar: string[] = ['NULL'];
 
         if (isEmpty(data) || data.length === 0) {
@@ -819,7 +797,7 @@ export const insertDuplicateUpdateData = ({
         const diff: string[] = _.difference(Object.keys(data[0]), columns);
 
         // if there are invalid fields/columns
-        if (!isEmpty(diff)) {
+         if (!isEmpty(diff)) {
             return resolve(resultData);
         }
 
@@ -844,71 +822,72 @@ export const insertDuplicateUpdateData = ({
         let update: string[] = [];
 
         keys.forEach(v => {
-            update.push(`${v} = VALUES(${v})`);
-        })
+            update.push(`${v} = EXCLUDED.${v}`); 
+        });
 
         const updateDuplicate: string = update.join(', ');
 
-        let query: string = `INSERT INTO ${table} (${column}) VALUES ? ON DUPLICATE KEY UPDATE ${updateDuplicate}`;
-        let values: (string | number | null)[][] = [];
-        let tempVal: (string | number | null)[] = [];
+        let values: any[] = [];
+        let valueLines: string[] = [];
+        let paramIndex = 1;
 
-        for (let i in data) {
-            // if index and 'data order' on each object not the same
+        for (let i = 0; i < data.length; i++) {
             if (!_.isEqual(keys, Object.keys(data[i]))) {
                 return resolve(resultData);
             }
 
-            tempVal = Object.keys(data[i]).map(k => {
-                let dataVal: string | number | null = null;
+            let linePlaceholders: string[] = [];
 
-                if (typeof data[i][k] !== "undefined") {
+            keys.forEach(k => {
+                let dataVal: any = null;
+
+                if (typeof data[i][k] !== 'undefined') {
                     dataVal = data[i][k];
 
                     if (typeof dataVal === 'string') {
                         dataVal = dataVal.trim();
 
-                        if (typeof dataVal === 'string' && timeChar.includes(dataVal.toUpperCase())) {
+                        if (timeChar.includes(dataVal.toUpperCase())) {
                             dataVal = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
                         }
 
-                        if (typeof dataVal === 'string' && nullChar.includes(dataVal.toUpperCase())) {
+                        if (nullChar.includes(dataVal.toUpperCase())) {
                             dataVal = null;
                         }
                     }
                 }
 
-                return dataVal;
+                values.push(dataVal);
+                linePlaceholders.push(`$${paramIndex++}`);
             });
 
-            values.push(tempVal);
+            valueLines.push(`(${linePlaceholders.join(', ')})`);
         }
 
-        pool.query(query, [values], (err: QueryError | null, result: ResultSetHeader): any => {
+        let query: string = `INSERT INTO ${table} (${column}) VALUES ${valueLines.join(', ')} ON CONFLICT (${conflictedColumns}) DO UPDATE SET ${updateDuplicate}`;
+
+        pool.query(query, values, (err: Error | null, result: QueryResult): any => {
             if (err) {
                 console.error(err);
                 return resolve(resultData);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || result.rowCount === null) {
                 return resolve(resultData);
             }
 
             if (cache.service === 1) {
                 const keyData = `${table}:all`;
 
-                switch (true) {
-                    case (cacheKeys && !isEmpty(cacheKeys)):
-                        cacheKeys.push(keyData);
-                        deleteDataQuery({ key: cacheKeys });
-                        break;
-                    default:
-                        deleteDataQuery({ key: [keyData] });
-                        break;
+                if (cacheKeys && !isEmpty(cacheKeys)) {
+                    cacheKeys.push(keyData);
+                    deleteDataQuery(cacheKeys);
+                } else {
+                    deleteDataQuery([keyData]);
                 }
             }
 
-            resultData.total_data = result.affectedRows;
+            resultData.total_data = result.rowCount;
             resultData.data = data;
 
             return resolve(resultData);
@@ -937,7 +916,7 @@ export const updateData = ({
             data: false
         };
 
-        let timeChar: string[] = ['CURRENT_TIMESTAMP()', 'NOW()'];
+        let timeChar: string[] = ['CURRENT_TIMESTAMP()', 'NOW()', 'CURRENT_TIMESTAMP'];
         let nullChar: string[] = ['NULL'];
         let setData: string[] = [];
         let queryData: string = '';
@@ -968,17 +947,17 @@ export const updateData = ({
         keys.forEach(k => {
             let dataVal: string | number | null = null;
 
-            if (typeof data[k] !== "undefined") {
+            if (typeof data[k] !== 'undefined') {
                 dataVal = data[k];
 
                 if (typeof dataVal === 'string') {
                     dataVal = dataVal.trim();
 
-                    if (typeof dataVal === 'string' && timeChar.includes(dataVal.toUpperCase())) {
+                    if (timeChar.includes(dataVal.toUpperCase())) {
                         dataVal = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
                     }
         
-                    if (typeof dataVal === 'string' && nullChar.includes(dataVal.toUpperCase())) {
+                    if (nullChar.includes(dataVal.toUpperCase())) {
                         dataVal = null;
                     }
                 }
@@ -1008,13 +987,13 @@ export const updateData = ({
         queryCond = setCond.join(' AND ');
         query += ` WHERE ${queryCond}`;
 
-        pool.query(query, (err: QueryError | null, result: ResultSetHeader): any => {
+        pool.query(query, (err: Error | null, result: QueryResult): any => {
             if (err) {
                 console.error(err);
                 return resolve(resultData);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || result.rowCount === null) {
                 return resolve(resultData);
             }
 
@@ -1022,32 +1001,29 @@ export const updateData = ({
                 const keyData = `${table}:all`;
                 const keyId = conditions['id'] || '';
 
-                switch (true) {
-                    case (cacheKeys && !isEmpty(cacheKeys)):
-                        cacheKeys.push(keyData);
+                if (cacheKeys && !isEmpty(cacheKeys)) {
+                    cacheKeys.push(keyData);
 
-                        if (keyId) {
-                            cacheKeys.push(`${table}:${keyId}`)
-                        }
+                    if (keyId) {
+                        cacheKeys.push(`${table}:${keyId}`);
+                    }
 
-                        deleteDataQuery({ key: cacheKeys });
-                        break;
-                    default:
-                        let keyToDelete = [keyData];
+                    deleteDataQuery(cacheKeys);
+                } else {
+                    let keyToDelete = [keyData];
 
-                        if (keyId) {
-                            keyToDelete.push(`${table}:${keyId}`)
-                        }
+                    if (keyId) {
+                        keyToDelete.push(`${table}:${keyId}`);
+                    }
 
-                        deleteDataQuery({ key: keyToDelete });
-                        break;
+                    deleteDataQuery(keyToDelete);
                 }
             }
 
-            resultData.total_data = result.affectedRows;
+            resultData.total_data = result.rowCount;
             resultData.data = conditions;
 
-            if (resultData.total_data < 1 || result.warningStatus) {
+            if (resultData.total_data < 1) {
                 resultData.data = false;
             }
 
@@ -1096,13 +1072,13 @@ export const deleteData = ({
         queryCond = setCond.join(' AND ');
         query += ` WHERE ${queryCond}`;
 
-        pool.query(query, (err: QueryError | null, result: ResultSetHeader): any => {
+        pool.query(query, (err: Error | null, result: QueryResult): any => {
             if (err) {
                 console.error(err);
                 return resolve(resultData);
             }
 
-            if (!result || isEmpty(result)) {
+            if (!result || result.rowCount === null) {
                 return resolve(resultData);
             }
 
@@ -1110,35 +1086,32 @@ export const deleteData = ({
                 const keyData = `${table}:all`;
                 const keyId = conditions['id'] || '';
 
-                switch (true) {
-                    case (cacheKeys && !isEmpty(cacheKeys)):
-                        cacheKeys.push(keyData);
+                if (cacheKeys && !isEmpty(cacheKeys)) {
+                    cacheKeys.push(keyData);
 
-                        if (keyId) {
-                            cacheKeys.push(`${table}:${keyId}`)
-                        }
+                    if (keyId) {
+                        cacheKeys.push(`${table}:${keyId}`);
+                    }
 
-                        deleteDataQuery({ key: cacheKeys });
-                        break;
-                    default:
-                        let keyToDelete = [keyData];
+                    deleteDataQuery(cacheKeys);
+                } else {
+                    let keyToDelete = [keyData];
 
-                        if (keyId) {
-                            keyToDelete.push(`${table}:${keyId}`)
-                        }
+                    if (keyId) {
+                        keyToDelete.push(`${table}:${keyId}`);
+                    }
 
-                        deleteDataQuery({ key: keyToDelete });
-                        break;
+                    deleteDataQuery(keyToDelete);
                 }
             }
 
-            resultData.total_data = result.affectedRows;
+            resultData.total_data = result.rowCount;
 
-            if (result.affectedRows > 0) {
+            if (result.rowCount > 0) {
                 resultData.data = conditions;
             }
 
             return resolve(resultData);
         });
-    })
+    });
 };

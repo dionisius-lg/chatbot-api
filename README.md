@@ -9,7 +9,7 @@
 
 This API is designed for scalability and performance by utilizing **Worker Threads** for CPU-intensive operations and **Redis** for database query caching.
 
-Chatbot knowledge base is stored in **MySQL**, allowing administrators to manage intents, entities, training questions, chatbot responses, and supported languages through RESTful APIs and Excel import/export functionality.
+Chatbot knowledge base is stored in **PostgreSQL**, allowing administrators to manage intents, entities, training questions, chatbot responses, and supported languages through RESTful APIs and Excel import/export functionality.
 
 This project is suitable for:
 
@@ -31,6 +31,11 @@ This project is suitable for:
   - Random fallback responses when no intent is recognized (`none` intent).
   - Dynamic entity replacement using the `%entity_name%` placeholder format.
 
+- **High-Performance In-Memory Model Caching**
+  - Pre-loads and caches `NlpManager` instance in memory during startup/first webhook chat query.
+  - Reuses the cached in-memory instance for sub-millisecond response times instead of loading the model from disk on every query.
+  - Automatically monitors `model.json` and `lang.json` on-disk modification times and hot-reloads the updated model dynamically.
+
 - **Worker Threads (Multi-threading)**
   - CPU-intensive tasks are executed in separate worker threads to keep the Node.js event loop responsive.
   - Used for:
@@ -42,7 +47,7 @@ This project is suitable for:
   - Automatic caching of database `SELECT` queries using Redis Hashes.
   - Generates unique MD5 hashes for SQL queries as cache keys.
   - Automatic cache invalidation on data modification (`INSERT`, `UPDATE`, `DELETE`).
-  - Can be enabled or disabled through `.env` configuration.
+  - Active Redis connection is established only when `CACHE_SERVICE` is enabled as `1` in `.env`. Otherwise, connection attempts are skipped and caching falls back to raw database queries.
 
 - **Dynamic Swagger UI Documentation**
   - Automatically generates API documentation from JSON specifications stored in `swagger/` directory.
@@ -59,7 +64,7 @@ This project is suitable for:
   - **API Key Authentication**, exclusively for client chat webhook route (`POST /webhook/chat`). A unique API key is automatically generated and stored in `key.txt` when the application is started for the first time.
 
 - **Database Migration Management**
-  - Database schema changes are managed using `db-migrate`, ensuring consistent MySQL schema synchronization across environments.
+  - Database schema changes are managed using `db-migrate`, ensuring consistent PostgreSQL schema synchronization across environments.
 
 ---
 
@@ -72,8 +77,8 @@ This project is suitable for:
 | Express.js         | 4.19.2         | Framework Web/API Routing        |
 | NLP.js (node-nlp)  | 4.27.0         | Natural Language Processing      |
 | db-migrate         | 0.11.14        | Database Migration Tool          |
-| mysql2             | 3.10.3         | MySQL Driver                     |
-| ioredis            | 5.4.1          | Redis Client                     |
+| pg                 | 8.21.0         | PostgreSQL Driver                |
+| redis              | 5.12.1         | Redis Client                     |
 | Joi                | 17.13.3        | Request Validation Schema        |
 | jsonwebtoken       | 9.0.2          | JWT Authentication               |
 | ExcelJS            | 4.4.0          | Excel Import & Export            |
@@ -86,7 +91,7 @@ This project is suitable for:
 
 Before running the application, make sure the following dependencies are installed:
 1. Node.js version `18.17.1` or later
-2. MySQL Server version `8.0` or later
+2. PostgreSQL Server version `12.x` or later
 3. Redis Server (optional, required only when caching is enabled)
 
 ---
@@ -156,9 +161,7 @@ SECRET=your_app_secret
 Create the database if it does not already exist:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS chatbot
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE chatbot;
 ```
 
 ### Run Migrations
@@ -297,12 +300,12 @@ http://localhost:3000/docs
 
 ## Import Templates
 
-The following Excel templates are available in the `/public` directory:
+The following Excel templates are available in the `/public` directory and can be downloaded directly from the server:
 
-* `template-entities.xlsx`
-* `template-faq.xlsx`
-* `template-faq-answers.xlsx`
-* `template-faq-questions.xlsx`
+* `template-entities.xlsx` (e.g. `http://localhost:3000/public/template-entities.xlsx`)
+* `template-faq.xlsx` (e.g. `http://localhost:3000/public/template-faq.xlsx`)
+* `template-faq-answers.xlsx` (e.g. `http://localhost:3000/public/template-faq-answers.xlsx`)
+* `template-faq-questions.xlsx` (e.g. `http://localhost:3000/public/template-faq-questions.xlsx`)
 
 ---
 
@@ -313,7 +316,7 @@ The following Excel templates are available in the `/public` directory:
 Windows:
 
 ```bash
-npm run dev-win
+npm run dev:win
 ```
 
 Linux/macOS:
@@ -335,7 +338,7 @@ Run the compiled application:
 Windows:
 
 ```bash
-npm run prod-win
+npm run prod:win
 ```
 
 Linux/macOS:

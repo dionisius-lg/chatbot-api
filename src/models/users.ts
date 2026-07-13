@@ -1,7 +1,7 @@
-import moment from "moment-timezone";
-import config from "./../config";
-import * as dbQuery from "./../helpers/db_query";
-import { isEmpty, isNumeric } from "./../helpers/value";
+import moment from 'moment-timezone';
+import config from './../config';
+import * as dbQuery from './../helpers/db_query';
+import { isEmpty, isNumeric } from './../helpers/value';
 
 const { timezone } = config;
 const table = 'users';
@@ -37,8 +37,8 @@ export const getAll = async (conditions: Conditions) => {
     }
 
     let customColumns: string[] = [
-        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
-        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
+        `COALESCE(created_users.fullname, created_users.username) AS created_user`,
+        `COALESCE(updated_users.fullname, updated_users.username) AS updated_user`,
     ];
 
     let join: string[] = [
@@ -62,15 +62,21 @@ export const getAll = async (conditions: Conditions) => {
         delete conditions.is_auth;
     }
 
-    const groupBy = [`${table}.id`];
-
-    return await dbQuery.getAll({ table, conditions, conditionTypes, customConditions, customColumns, join, columnDeselect, groupBy });
+    return await dbQuery.getAll({
+        table,
+        conditions,
+        conditionTypes,
+        customConditions,
+        customColumns,
+        join,
+        columnDeselect
+    });
 };
 
 export const getDetail = async (conditions: Conditions) => {
     const customColumns: string[] = [
-        `IFNULL(created_users.fullname, created_users.username) AS created_user`,
-        `IFNULL(updated_users.fullname, updated_users.username) AS updated_user`,
+        `COALESCE(created_users.fullname, created_users.username) AS created_user`,
+        `COALESCE(updated_users.fullname, updated_users.username) AS updated_user`,
     ];
 
     const join: string[] = [
@@ -80,12 +86,19 @@ export const getDetail = async (conditions: Conditions) => {
 
     let columnDeselect: string[] = [];
 
-    if (isEmpty(conditions?.is_auth) || parseInt(conditions?.is_auth) !== 1) {
+    if (conditions?.is_auth === true) {
         columnDeselect.push('password');
-        delete conditions.is_auth;
     }
 
-    return await dbQuery.getDetail({ table, conditions, customColumns, join, columnDeselect });
+    delete conditions.is_auth;
+
+    return await dbQuery.getDetail({
+        table,
+        conditions,
+        customColumns,
+        join,
+        columnDeselect
+    });
 };
 
 export const insertData = async (data: Data) => {

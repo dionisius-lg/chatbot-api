@@ -1,1 +1,1 @@
-TRUNCATE TABLE languages;
+truncate table languages restart identity cascade;

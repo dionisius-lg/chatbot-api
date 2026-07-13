@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
-import { getContent, putContent } from "./../helpers/file";
-import { randomString, isEmpty } from "../helpers/value";
+import dotenv from 'dotenv';
+import { getContent, putContent } from './../helpers/file';
+import { randomString, isEmpty } from '../helpers/value';
 
 dotenv.config({ path: './.env' });
 

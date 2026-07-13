@@ -1,7 +1,7 @@
-import moment from "moment-timezone";
-import config from "./../config";
-import * as dbQuery from "./../helpers/db_query";
-import { isEmpty, isNumeric } from "./../helpers/value";
+import moment from 'moment-timezone';
+import config from './../config';
+import * as dbQuery from './../helpers/db_query';
+import { isEmpty, isNumeric } from './../helpers/value';
 
 const { timezone } = config;
 const table = 'languages';

@@ -1,13 +1,14 @@
-import { Request, Response } from "express";
-import moment from "moment-timezone";
+import { statSync, existsSync } from 'fs';
+import { Request, Response } from 'express';
+import moment from 'moment-timezone';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { NlpManager, Language } from "node-nlp";
-import config from "./../config";
-import * as faqAnswersModel from "./../models/faq_answers";
-import { sendSuccess, sendNotFoundData, sendInternalServerError } from "./../helpers/response";
-import { isEmpty } from "./../helpers/value";
-import { getContent } from "./../helpers/file";
+import { NlpManager, Language } from 'node-nlp';
+import config from './../config';
+import * as faqAnswersModel from './../models/faq_answers';
+import { sendSuccess, sendNotFoundData, sendInternalServerError } from './../helpers/response';
+import { isEmpty } from './../helpers/value';
+import { getContent } from './../helpers/file';
 
 const { timezone } = config;
 
@@ -28,17 +29,56 @@ interface ManagerProcessed {
     entities?: Record<string, string | number>[];
 }
 
+let cachedManager: any = null;
+let cachedLanguages: string[] = [];
+let cachedModelMtime: number = 0;
+let cachedLangMtime: number = 0;
+
+/**
+ * Retrieves the NlpManager instance and languages array, reloading them from disk if either lang.json or model.json was modified.
+ * 
+ * @returns {{ manager: any, languages: string[] }} The updated or cached manager and languages list.
+ */
+function getOrUpdateNlpManager(): { manager: any, languages: string[] } {
+    const modelPath = 'model.json';
+    const langPath = 'lang.json';
+
+    let modelMtime = 0;
+    let langMtime = 0;
+
+    if (existsSync(modelPath)) {
+        modelMtime = statSync(modelPath).mtimeMs;
+    }
+    if (existsSync(langPath)) {
+        langMtime = statSync(langPath).mtimeMs;
+    }
+
+    if (cachedManager && cachedModelMtime === modelMtime && cachedLangMtime === langMtime) {
+        return { manager: cachedManager, languages: cachedLanguages };
+    }
+
+    const langContent = getContent(langPath);
+    const languages: string[] = langContent && JSON.parse(langContent) || [];
+    const manager = new NlpManager({ languages });
+
+    if (existsSync(modelPath)) {
+        manager.load(modelPath);
+    }
+
+    cachedManager = manager;
+    cachedLanguages = languages;
+    cachedModelMtime = modelMtime;
+    cachedLangMtime = langMtime;
+
+    return { manager, languages };
+}
+
 export const chat = async (req: Request, res: Response) => {
     const { body } = req;
 
     try {
-        let langContent = getContent('lang.json');
-
-        const languages: string[] = langContent && JSON.parse(langContent) || [];
-        const manager = new NlpManager({ languages });
+        const { manager, languages } = getOrUpdateNlpManager();
         const langGuesser: LangGuesser[] = new Language().guess(body.message, languages);
-
-        manager.load('model.json');
 
         let langGuessed: string = 'id';
 

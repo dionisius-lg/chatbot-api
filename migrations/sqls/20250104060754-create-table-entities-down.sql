@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS `entities`;
+drop table if exists entities;

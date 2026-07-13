@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
-import { existsSync } from "fs";
-import { sendBadRequest } from "./../helpers/response";
-import { decrypt } from "./../helpers/encryption";
+import { Request, Response } from 'express';
+import { existsSync } from 'fs';
+import { sendBadRequest } from './../helpers/response';
+import { decrypt } from './../helpers/encryption';
 
 export const download = async (req: Request, res: Response) => {
     const { params: { id } } = req;

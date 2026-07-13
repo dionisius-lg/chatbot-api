@@ -1,1 +1,1 @@
-TRUNCATE TABLE users;
+truncate table users restart identity cascade;

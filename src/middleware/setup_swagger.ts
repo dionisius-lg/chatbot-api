@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
-import swagger from "swagger-ui-express";
-import path from "path";
-import { readdirSync } from "fs";
-import { getContent } from "./../helpers/file";
-import { isEmpty } from "./../helpers/value";
+import { Request, Response, NextFunction } from 'express';
+import swagger from 'swagger-ui-express';
+import path from 'path';
+import { readdirSync } from 'fs';
+import { getContent } from './../helpers/file';
+import { isEmpty } from './../helpers/value';
 
 interface SwaggerTag {
     name: string;

@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS `languages`;
+drop table if exists languages;

@@ -1,13 +1,13 @@
-import { Request, Response } from "express";
-import * as entitiesModel from "./../models/entities";
-import * as faqsModel from "./../models/faqs";
-import * as faqAnswersModel from "./../models/faq_answers";
-import * as faqQuestionsModel from "./../models/faq_questions";
-import * as languagesModel from "./../models/languages";
-import * as usersModel from "./../models/users";
-import { sendSuccess, sendBadRequest, sendNotFoundData } from "./../helpers/response";
-import { createExcel } from "./../helpers/thread";
-import { encrypt } from "./../helpers/encryption";
+import { Request, Response } from 'express';
+import * as entitiesModel from './../models/entities';
+import * as faqsModel from './../models/faqs';
+import * as faqAnswersModel from './../models/faq_answers';
+import * as faqQuestionsModel from './../models/faq_questions';
+import * as languagesModel from './../models/languages';
+import * as usersModel from './../models/users';
+import { sendSuccess, sendBadRequest, sendNotFoundData } from './../helpers/response';
+import { createExcel } from './../helpers/thread';
+import { encrypt } from './../helpers/encryption';
 
 export const getEntities = async (req: Request, res: Response) => {
     const { query, secure } = req;

@@ -1,6 +1,6 @@
-import { workerData, parentPort } from "worker_threads";
-import exceljs from "exceljs";
-import { createReadStream } from "fs";
+import { workerData, parentPort } from 'worker_threads';
+import exceljs from 'exceljs';
+import { createReadStream } from 'fs';
 
 interface Result {
     [key: string]: any;
@@ -28,7 +28,7 @@ const readExcel = async (file: Express.Multer.File): Promise<Result[]> => {
                     switch (model.number) {
                         case 1:
                             model.cells.forEach((cell, i) => {
-                                let value = `${cell.value}`.toLowerCase().replace(/[^0-9a-z ]/gi, '').replace( /\s\s+/g, ' ').replace(/ /g,"_");
+                                let value = `${cell.value}`.toLowerCase().replace(/[^0-9a-z ]/gi, '').replace( /\s\s+/g, ' ').replace(/ /g,'_');
                                 headers.push(value);
                             });
                             break;
@@ -57,10 +57,8 @@ const readExcel = async (file: Express.Multer.File): Promise<Result[]> => {
     }
 };
 
-readExcel(workerData)
-    .then((result: Result[]) => {
-        parentPort?.postMessage({ success: true, data: result });
-    })
-    .catch((err: any) => {
-        parentPort?.postMessage({ success: false, error: err.message });
-    });
+readExcel(workerData).then((result: Result[]) => {
+    parentPort?.postMessage({ success: true, data: result });
+}).catch((err: any) => {
+    parentPort?.postMessage({ success: false, error: err.message });
+});

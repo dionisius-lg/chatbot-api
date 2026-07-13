@@ -1,6 +1,6 @@
-import { Worker, WorkerOptions } from "worker_threads";
-import path from "path";
-import config from "./../config";
+import { Worker, WorkerOptions } from 'worker_threads';
+import path from 'path';
+import config from './../config';
 
 interface Data {
     columndata: Record<string, any>;
@@ -39,7 +39,7 @@ export const createExcel = (data: Data): Promise<ResultCreateExcel> => {
                 break;
             default:
                 resolvePath = path.resolve(__dirname, 'create_excel.ts');
-                workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ["--require", "ts-node/register"] : undefined;
+                workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ['--require', 'ts-node/register'] : undefined;
                 break;
         }
 
@@ -74,7 +74,7 @@ export const readExcel = (data: Express.Multer.File): Promise<ResultReadExcel> =
                 break;
             default:
                 resolvePath = path.resolve(__dirname, 'read_excel.ts');
-                workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ["--require", "ts-node/register"] : undefined;
+                workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ['--require', 'ts-node/register'] : undefined;
                 break;
         }
 
@@ -107,7 +107,7 @@ export const trainNetwork = (): Promise<ResultTrainNetwork> => {
                 break;
             default:
                 resolvePath = path.resolve(__dirname, 'train_network.ts');
-                workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ["--require", "ts-node/register"] : undefined;
+                workerOptions.execArgv = /\.ts$/.test(resolvePath) ? ['--require', 'ts-node/register'] : undefined;
                 break;
         }
 

@@ -1,113 +1,112 @@
 [
-    {
-      "path": "/",
-      "method": {
-        "get": {
-          "security": [
-            {
-              "bearerAuth": []
+  {
+    "path": "/",
+    "method": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "get language data",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
             }
-          ],
-          "summary": "get language data",
-          "parameters": [
-            {
-              "in": "query",
-              "name": "name",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "in": "query",
-              "name": "native_name",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "in": "query",
-              "name": "locale",
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "in": "query",
-              "name": "is_active",
-              "schema": {
-                "nullable": true,
-                "type": "integer",
-                "enum": ["0", "1"]
-              }
-            },
-            {
-              "in": "query",
-              "name": "created_at",
-              "schema": {
-                "type": "date"
-              }
-            },
-            {
-              "in": "query",
-              "name": "created_by",
-              "schema": {
-                "type": "integer"
-              }
-            },
-            {
-              "in": "query",
-              "name": "updated_at",
-              "schema": {
-                "type": "date"
-              }
-            },
-            {
-              "in": "query",
-              "name": "updated_by",
-              "schema": {
-                "type": "integer"
-              }
-            },
-            {
-              "in": "query",
-              "name": "start",
-              "schema": {
-                "type": "timestamp"
-              }
-            },
-            {
-              "in": "query",
-              "name": "end",
-              "schema": {
-                "type": "timestamp"
-              }
+          },
+          {
+            "in": "query",
+            "name": "native_name",
+            "schema": {
+              "type": "string"
             }
-          ]
-        }
-      }
-    },
-    {
-      "path": "/{id}",
-      "method": {
-        "get": {
-          "security": [
-            {
-              "bearerAuth": []
+          },
+          {
+            "in": "query",
+            "name": "locale",
+            "schema": {
+              "type": "string"
             }
-          ],
-          "summary": "get language data by id",
-          "parameters": [
-            {
-              "in": "path",
-              "name": "id",
-              "schema": {
-                "type": "integer"
-              },
-              "required": true
+          },
+          {
+            "in": "query",
+            "name": "is_active",
+            "schema": {
+              "nullable": true,
+              "type": "integer",
+              "enum": ["0", "1"]
             }
-          ]
-        }
+          },
+          {
+            "in": "query",
+            "name": "created_at",
+            "schema": {
+              "type": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_by",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at",
+            "schema": {
+              "type": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_by",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "schema": {
+              "type": "timestamp"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "schema": {
+              "type": "timestamp"
+            }
+          }
+        ]
       }
     }
-  ]
-  
+  },
+  {
+    "path": "/{id}",
+    "method": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "get language data by id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ]
+      }
+    }
+  }
+]

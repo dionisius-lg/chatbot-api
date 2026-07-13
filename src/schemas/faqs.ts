@@ -5,15 +5,15 @@ const schema = {
         id: Joi.number().min(1).required(),
     }),
     createData: Joi.object().keys({
-        category: Joi.string().min(1).max(50).regex(/^[a-zA-Z]*$/).required(),
-        intent: Joi.string().min(1).max(50).regex(/^[a-zA-Z]*$/).required(),
+        category: Joi.string().min(1).max(50).regex(/^[a-zA-Z\_]*$/).required(),
+        intent: Joi.string().min(1).max(50).regex(/^[a-zA-Z\_]*$/).required(),
         language_id: Joi.number().min(1).required(),
     }),
     updateData: Joi.object().keys({
-        category: Joi.string().min(1).max(50).regex(/^[a-zA-Z]*$/),
-        intent: Joi.string().min(1).max(50).regex(/^[a-zA-Z]*$/),
+        category: Joi.string().min(1).max(50).regex(/^[a-zA-Z\_]*$/),
+        intent: Joi.string().min(1).max(50).regex(/^[a-zA-Z\_]*$/),
         language_id: Joi.number().min(1),
-        is_active: Joi.number().valid(1, 0),
+        is_active: Joi.boolean(),
     }),
 };
 
